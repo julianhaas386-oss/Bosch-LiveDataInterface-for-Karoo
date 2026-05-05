@@ -1,7 +1,7 @@
 package de.dxmedia.bosch.ldi.extension
 
 import io.hammerhead.karooext.extension.KarooExtension
-import io.hammerhead.karooext.models.DataTypeImpl
+import io.hammerhead.karooext.extension.DataTypeImpl
 
 /**
  * Bosch LiveDataInterface KarooExtension Service.
