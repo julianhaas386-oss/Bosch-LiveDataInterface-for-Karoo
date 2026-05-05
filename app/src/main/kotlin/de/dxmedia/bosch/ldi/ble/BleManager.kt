@@ -113,6 +113,7 @@ class BleManager(
     fun stop() {
         scope.cancel()
         closeableDispatcher?.close()
+        try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
         try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
         activeGatt?.disconnect()
         activeGatt?.close()
