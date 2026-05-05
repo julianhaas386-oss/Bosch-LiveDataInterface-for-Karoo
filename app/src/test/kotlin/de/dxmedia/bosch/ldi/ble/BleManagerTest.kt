@@ -209,7 +209,7 @@ class BleManagerTest {
     }
 
     @Test
-    fun `valid notifications are emitted to notifications flow`() = runTest {
+    fun `valid notifications are emitted to notifications flow`() = runTest(UnconfinedTestDispatcher()) {
         val mockGatt = mockk<BluetoothGatt>(relaxed = true)
         val mockChar = mockk<android.bluetooth.BluetoothGattCharacteristic>(relaxed = true)
         val payload = byteArrayOf(1, 2, 3, 4)
@@ -217,7 +217,6 @@ class BleManagerTest {
         val m = manager()
         val received = mutableListOf<ByteArray>()
         val job = launch { m.notifications.collect { received.add(it) } }
-        advanceUntilIdle() // let collect subscribe before emission
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             m.gattCallback.onCharacteristicChanged(mockGatt, mockChar, payload)
