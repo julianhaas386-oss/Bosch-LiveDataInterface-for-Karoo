@@ -1,0 +1,61 @@
+// Bosch eBike Live Data Interface — Protocol Buffer Schema
+// Source: Bosch Live Data Interface Specification v1.0.0, Section 2.4
+// Compatible with proto3 revision >= 3.15 (optional field presence required)
+syntax = "proto3";
+
+package com.bosch.ebike;
+
+option java_package = "com.bosch.ebike";
+option java_outer_classname = "EBikeLiveDataProto";
+option java_multiple_files = true;
+
+// State of the eBike light system.
+enum LightState {
+  LIGHT_STATE_INVALID = 0;
+  LIGHT_STATE_OFF = 1;
+  LIGHT_STATE_ON = 2;
+}
+
+// Live data streamed from the Bosch eBike Smart System via BLE GATT notifications.
+// Fields are optional: absent field = value unchanged since last notification.
+// Clients must merge incoming messages with previous state (proto3 optional presence).
+message LiveData {
+  // Bike speed. Unit: 1/100 km/h. Range: 0-655.35 km/h. Divide by 100 for display.
+  optional uint32 speed = 1;
+
+  // Rider cadence. Unit: 1 rpm. Range: -32768 to 32767 rpm.
+  optional int32 cadence = 2;
+
+  // Rider power output. Unit: 1 W. Range: 0-65535 W.
+  optional uint32 rider_power = 5;
+
+  // Ambient brightness measured by eBike sensor. Unit: 1/1000 lux. Divide by 1000 for lux.
+  optional uint32 ambient_brightness = 9;
+
+  // Battery state of charge. Unit: 1 %. Range: 0-100 %.
+  optional uint32 battery_soc = 10;
+
+  // Current UTC time from eBike. Unit: seconds since Unix epoch (1970-01-01).
+  optional int64 time = 11;
+
+  // Total distance traveled. Unit: 1 meter.
+  optional uint32 odometer = 12;
+
+  // State of the eBike light system.
+  optional LightState bike_light = 17;
+
+  // True if the eBike system is in a locked state.
+  optional bool system_locked = 21;
+
+  // True if a charger is connected (does not mean charging is active).
+  optional bool charger_connected = 22;
+
+  // True if the light reserve state is active.
+  optional bool light_reserve_state = 23;
+
+  // True if a diagnosis tool (e.g. at bike dealer) is connected.
+  optional bool diagnosis_program_active = 24;
+
+  // True if the bike is standing still (may have minor movement depending on sensor accuracy).
+  optional bool bike_not_driving = 25;
+}
