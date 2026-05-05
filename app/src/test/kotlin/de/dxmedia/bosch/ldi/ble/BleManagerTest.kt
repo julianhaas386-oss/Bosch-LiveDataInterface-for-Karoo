@@ -4,17 +4,24 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.os.Build
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.CHARACTERISTIC_UUID
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.SERVICE_UUID
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.TARGET_MTU
+import io.mockk.anyConstructed
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.unmockkConstructors
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -23,6 +30,25 @@ class BleManagerTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
     private val mockAdapter = mockk<BluetoothAdapter>(relaxed = true)
+
+    @Before
+    fun setUp() {
+        mockkConstructor(AdvertiseSettings.Builder::class)
+        every { anyConstructed<AdvertiseSettings.Builder>().setAdvertiseMode(any()) } answers { self as AdvertiseSettings.Builder }
+        every { anyConstructed<AdvertiseSettings.Builder>().setConnectable(any()) } answers { self as AdvertiseSettings.Builder }
+        every { anyConstructed<AdvertiseSettings.Builder>().setTimeout(any()) } answers { self as AdvertiseSettings.Builder }
+        every { anyConstructed<AdvertiseSettings.Builder>().build() } returns mockk(relaxed = true)
+
+        mockkConstructor(AdvertiseData.Builder::class)
+        every { anyConstructed<AdvertiseData.Builder>().setIncludeDeviceName(any()) } answers { self as AdvertiseData.Builder }
+        every { anyConstructed<AdvertiseData.Builder>().addServiceSolicitationUuid(any()) } answers { self as AdvertiseData.Builder }
+        every { anyConstructed<AdvertiseData.Builder>().build() } returns mockk(relaxed = true)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkConstructors(AdvertiseSettings.Builder::class, AdvertiseData.Builder::class)
+    }
 
     private fun manager() = BleManager(
         context = mockContext,
