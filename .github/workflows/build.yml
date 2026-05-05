@@ -72,11 +72,7 @@ jobs:
           }
           EOF
 
-          if [ -f "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" ]; then
-            ffmpeg -y -i app/src/main/res/mipmap-xxhdpi/ic_launcher.webp app/build/outputs/release-assets/icon.png
-          elif [ -f "app/src/main/res/mipmap-xxhdpi/ic_launcher.png" ]; then
-            cp app/src/main/res/mipmap-xxhdpi/ic_launcher.png app/build/outputs/release-assets/icon.png
-          fi
+          cp icon.png app/build/outputs/release-assets/icon.png
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4
