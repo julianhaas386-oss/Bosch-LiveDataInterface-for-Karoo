@@ -20,7 +20,7 @@
     <string name="field_battery_soc_name">eBike-Akku</string>
     <string name="field_battery_soc_desc">Ladezustand des eBike-Akkus in Prozent</string>
 
-    <!-- DataType: Odometer -->
+    <!-- DataType: Gesamtkilometer -->
     <string name="field_odometer_name">eBike-Gesamtstrecke</string>
     <string name="field_odometer_desc">Gesamte zur&#xfc;ckgelegte Strecke des eBikes</string>
 
@@ -36,7 +36,7 @@
 
     <!-- DataType: Umgebungshelligkeit -->
     <string name="field_ambient_brightness_name">Umgebungshelligkeit</string>
-    <string name="field_ambient_brightness_desc">Gemessene Umgebungslichst&#xe4;rke vom eBike-Sensor</string>
+    <string name="field_ambient_brightness_desc">Gemessene Umgebungslichts&#x74;&#xe4;rke vom eBike-Sensor</string>
 
     <!-- DataType: Lichtreserve -->
     <string name="field_light_reserve_name">Lichtreserve</string>
@@ -50,7 +50,7 @@
     <string name="field_system_locked_yes">GESPERRT</string>
     <string name="field_system_locked_no">ENTSPERRT</string>
 
-    <!-- DataType: Ladeger&#xe4;t -->
+    <!-- DataType: Ladegerät -->
     <string name="field_charger_connected_name">Ladeger&#xe4;t</string>
     <string name="field_charger_connected_desc">Zeigt an, ob ein Ladeger&#xe4;t am eBike angeschlossen ist</string>
     <string name="field_charger_connected_yes">VERBUNDEN</string>
@@ -84,7 +84,7 @@
     <string name="wizard_step1_title">So funktioniert es</string>
     <string name="wizard_step1_body">Dein Karoo sendet ein Bluetooth-Signal. Dein Bosch eBike erkennt es und baut die Verbindung auf. Stelle sicher, dass dein eBike eingeschaltet und in der N&#xe4;he ist (ca. 10 m).</string>
     <string name="wizard_step2_title">Suche l&#xe4;uft&#x2026;</string>
-    <string name="wizard_step2_body">Dein Karoo advertiert jetzt. Best&#xe4;tige die Verbindung am eBike-Display, wenn du dazu aufgefordert wirst.</string>
+    <string name="wizard_step2_body">Dein Karoo sendet nun ein Bluetooth-Signal. Best&#xe4;tige die Verbindung am eBike-Display, wenn du dazu aufgefordert wirst.</string>
     <string name="wizard_step3_success_title">Verbunden!</string>
     <string name="wizard_step3_success_body">Dein eBike wurde erfolgreich gekoppelt. Livedaten erscheinen jetzt in deinen Fahrprofilen.</string>
     <string name="wizard_step3_failure_title">Kein eBike gefunden</string>

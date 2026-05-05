@@ -72,7 +72,7 @@
     <string name="field_connection_name">eBike Connection</string>
     <string name="field_connection_desc">BLE connection status to the Bosch eBike</string>
     <string name="field_connection_connected">CONNECTED</string>
-    <string name="field_connection_searching">SEARCHING</string>
+    <string name="field_connection_searching">SEARCHING…</string>
     <string name="field_connection_disconnected">DISCONNECTED</string>
 
     <!-- Page: eBike Dashboard -->
