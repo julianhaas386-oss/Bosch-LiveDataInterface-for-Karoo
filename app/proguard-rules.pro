@@ -18,11 +18,10 @@
 -keep class androidx.security.crypto.** { *; }
 
 # Kotlin Coroutines
--keepnames class kotlinx.coroutines.** { *; }
+-keep class kotlinx.coroutines.** { *; }
 
-# Strip Log.d/v/i from release builds
+# Strip Log.d/v from release builds; keep Log.i/w/e for field diagnostics
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
-    public static *** i(...);
 }
