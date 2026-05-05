@@ -1,6 +1,7 @@
 package de.dxmedia.bosch.ldi.ble
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothProfile
 import android.content.Context
@@ -219,5 +220,15 @@ class BleManagerTest {
         job.cancel()
         assertEquals(1, received.size)
         assertEquals(payload.toList(), received[0].toList())
+    }
+
+    @Test
+    fun `onBondLost transitions state to Disconnected`() = runTest {
+        val mockDevice = mockk<BluetoothDevice>(relaxed = true)
+
+        val m = manager()
+        m.simulateBondStateChange(mockDevice, BluetoothDevice.BOND_NONE)
+
+        assertEquals(BleState.Disconnected, m.state.value)
     }
 }

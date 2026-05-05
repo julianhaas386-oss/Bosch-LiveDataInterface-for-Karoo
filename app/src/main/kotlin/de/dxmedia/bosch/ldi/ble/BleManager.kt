@@ -1,6 +1,7 @@
 package de.dxmedia.bosch.ldi.ble
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
@@ -81,6 +82,7 @@ class BleManager(
 
     internal val gattCallback = GattCallback()
     private val advertiseCallback = BoschAdvertiseCallback()
+    private val bondReceiver = BondReceiver()
 
     fun start(bondedAddress: String? = null) {
         scope.launch {
@@ -101,6 +103,8 @@ class BleManager(
                     .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
                     .build()
                 advertiser.startAdvertising(settings, data, advertiseCallback)
+                val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                context.registerReceiver(bondReceiver, filter)
                 _state.value = BleState.Advertising(bondedAddress)
             }
         }
@@ -121,6 +125,7 @@ class BleManager(
     }
 
     private fun disconnectInternal() {
+        try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
         watchdogJob?.cancel()
         watchdogJob = null
         try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
@@ -278,6 +283,42 @@ class BleManager(
             delay(NOTIFICATION_WATCHDOG_MS)
             Log.e(TAG, "No notification for ${NOTIFICATION_WATCHDOG_MS}ms — disconnecting")
             mutex.withLock { disconnectInternal() }
+        }
+    }
+
+    internal fun simulateBondStateChange(device: BluetoothDevice, newState: Int) {
+        bondReceiver.handleBondStateChanged(device, newState)
+    }
+
+    private inner class BondReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
+            val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(
+                    BluetoothDevice.EXTRA_DEVICE,
+                    BluetoothDevice::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+            } ?: return
+            val newBondState = intent.getIntExtra(
+                BluetoothDevice.EXTRA_BOND_STATE,
+                BluetoothDevice.BOND_NONE
+            )
+            handleBondStateChanged(device, newBondState)
+        }
+
+        fun handleBondStateChanged(device: BluetoothDevice, newBondState: Int) {
+            if (newBondState == BluetoothDevice.BOND_NONE) {
+                Log.w(TAG, "Bond lost with ${device.address} — removing bond and disconnecting")
+                try {
+                    device.javaClass.getMethod("removeBond").invoke(device)
+                } catch (e: Exception) {
+                    Log.e(TAG, "removeBond() reflection failed", e)
+                }
+                scope.launch { mutex.withLock { disconnectInternal() } }
+            }
         }
     }
 
