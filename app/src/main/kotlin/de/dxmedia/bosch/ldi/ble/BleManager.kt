@@ -109,18 +109,10 @@ class BleManager(
                     Log.e(TAG, "LE advertising not supported on this device")
                     return@withLock
                 }
-                val settings = AdvertiseSettings.Builder()
-                    .setAdvertiseMode(
-                        if (bondedAddress == null) AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
-                        else AdvertiseSettings.ADVERTISE_MODE_BALANCED
-                    )
-                    .setConnectable(true)
-                    .setTimeout(0)
-                    .build()
-                val data = AdvertiseData.Builder()
-                    .setIncludeDeviceName(true)
-                    .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
-                    .build()
+                val mode = if (bondedAddress == null) AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
+                           else AdvertiseSettings.ADVERTISE_MODE_BALANCED
+                val settings = buildAdvertiseSettings(mode)
+                val data = buildAdvertiseData()
                 advertiser.startAdvertising(settings, data, advertiseCallback)
                 val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                 context.registerReceiver(bondReceiver, filter)
@@ -191,15 +183,8 @@ class BleManager(
                                     try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
                                     val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                                     context.registerReceiver(bondReceiver, filter)
-                                    val settings = AdvertiseSettings.Builder()
-                                        .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-                                        .setConnectable(true)
-                                        .setTimeout(0)
-                                        .build()
-                                    val data = AdvertiseData.Builder()
-                                        .setIncludeDeviceName(true)
-                                        .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
-                                        .build()
+                                    val settings = buildAdvertiseSettings(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                                    val data = buildAdvertiseData()
                                     advertiser.startAdvertising(settings, data, advertiseCallback)
                                     _state.value = BleState.Advertising(lastAddress)
                                 }
@@ -284,6 +269,19 @@ class BleManager(
             handleNotification(value)
         }
     }
+
+    internal open fun buildAdvertiseSettings(mode: Int): AdvertiseSettings =
+        AdvertiseSettings.Builder()
+            .setAdvertiseMode(mode)
+            .setConnectable(true)
+            .setTimeout(0)
+            .build()
+
+    internal open fun buildAdvertiseData(): AdvertiseData =
+        AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
+            .build()
 
     private fun enableNotifications(gatt: BluetoothGatt) {
         val characteristic = ldiCharacteristic ?: return
