@@ -83,7 +83,27 @@ class BleManager(
     private val advertiseCallback = BoschAdvertiseCallback()
 
     fun start(bondedAddress: String? = null) {
-        // TODO Task 4
+        scope.launch {
+            mutex.withLock {
+                if (_state.value !is BleState.Disconnected) return@withLock
+                this@BleManager.bondedAddress = bondedAddress
+                val advertiser = adapter.bluetoothLeAdvertiser ?: run {
+                    Log.e(TAG, "LE advertising not supported on this device")
+                    return@withLock
+                }
+                val settings = AdvertiseSettings.Builder()
+                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                    .setConnectable(true)
+                    .setTimeout(0)
+                    .build()
+                val data = AdvertiseData.Builder()
+                    .setIncludeDeviceName(true)
+                    .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
+                    .build()
+                advertiser.startAdvertising(settings, data, advertiseCallback)
+                _state.value = BleState.Advertising(bondedAddress)
+            }
+        }
     }
 
     fun stop() {
@@ -116,6 +136,12 @@ class BleManager(
     }
 
     private inner class BoschAdvertiseCallback : AdvertiseCallback() {
-        // Task 4
+        override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
+            Log.i(TAG, "Advertising started")
+        }
+        override fun onStartFailure(errorCode: Int) {
+            Log.e(TAG, "Advertising failed: errorCode=$errorCode")
+            scope.launch { mutex.withLock { _state.value = BleState.Disconnected } }
+        }
     }
 }

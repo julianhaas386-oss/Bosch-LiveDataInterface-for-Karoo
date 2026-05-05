@@ -35,4 +35,50 @@ class BleManagerTest {
         m.stop()
         assertEquals(BleState.Disconnected, m.state.value)
     }
+
+    @Test
+    fun `start() transitions state to Advertising`() = runTest {
+        val mockAdvertiser = mockk<android.bluetooth.le.BluetoothLeAdvertiser>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns mockAdvertiser
+
+        val m = manager()
+        m.start(bondedAddress = null)
+
+        assertEquals(BleState.Advertising(null), m.state.value)
+    }
+
+    @Test
+    fun `start() with bonded address stores it in state`() = runTest {
+        val mockAdvertiser = mockk<android.bluetooth.le.BluetoothLeAdvertiser>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns mockAdvertiser
+
+        val m = manager()
+        m.start(bondedAddress = "AA:BB:CC:DD:EE:FF")
+
+        assertEquals(BleState.Advertising("AA:BB:CC:DD:EE:FF"), m.state.value)
+    }
+
+    @Test
+    fun `start() no-ops when already Advertising`() = runTest {
+        val mockAdvertiser = mockk<android.bluetooth.le.BluetoothLeAdvertiser>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns mockAdvertiser
+
+        val m = manager()
+        m.start(null)
+        m.start(null) // second call must be ignored
+
+        io.mockk.verify(exactly = 1) {
+            mockAdvertiser.startAdvertising(any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `start() stays Disconnected when advertiser is null`() = runTest {
+        every { mockAdapter.bluetoothLeAdvertiser } returns null
+
+        val m = manager()
+        m.start(null)
+
+        assertEquals(BleState.Disconnected, m.state.value)
+    }
 }
