@@ -46,19 +46,47 @@ jobs:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
 
-      - name: Rename APK
+      - name: Prepare release assets
         run: |
-          VERSION="${GITHUB_REF_NAME:-debug}"
-          VERSION="${VERSION//\//-}"
-          mkdir -p app/build/outputs/apk/renamed
+          mkdir -p app/build/outputs/release-assets
           cp app/build/outputs/apk/debug/app-debug.apk \
-             "app/build/outputs/apk/renamed/bosch-ldi-${VERSION}.apk"
+             app/build/outputs/release-assets/app-release.apk
 
-      - name: Upload APK
+          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | grep -oP '\d+')
+          TAG="${GITHUB_REF_NAME:-0.0.0}"
+          VERSION="${TAG#v}"
+
+          cat > app/build/outputs/release-assets/manifest.json << EOF
+          {
+            "label": "Bosch LiveDataInterface",
+            "packageName": "de.dxmedia.bosch.ldi",
+            "iconUrl": "https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo/releases/latest/download/icon.png",
+            "latestApkUrl": "https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo/releases/latest/download/app-release.apk",
+            "latestVersion": "${VERSION}",
+            "latestVersionCode": ${VERSION_CODE},
+            "developer": "dxmedia.de",
+            "description": "Shows live Bosch eBike data — speed, cadence, rider power, battery SOC, odometer and more — directly on your Hammerhead Karoo 2 or 3.",
+            "releaseNotes": "",
+            "screenshotUrls": [],
+            "tags": ["ebike", "sensor"]
+          }
+          EOF
+
+          if [ -f "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" ]; then
+            convert app/src/main/res/mipmap-xxhdpi/ic_launcher.webp \
+                    app/build/outputs/release-assets/icon.png 2>/dev/null || \
+            cp app/src/main/res/mipmap-xxhdpi/ic_launcher.webp \
+               app/build/outputs/release-assets/icon.png
+          elif [ -f "app/src/main/res/mipmap-xxhdpi/ic_launcher.png" ]; then
+            cp app/src/main/res/mipmap-xxhdpi/ic_launcher.png \
+               app/build/outputs/release-assets/icon.png
+          fi
+
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
-          name: bosch-ldi-apk
-          path: app/build/outputs/apk/renamed/*.apk
+          name: release-assets
+          path: app/build/outputs/release-assets/
           retention-days: 7
 
       - name: Upload Lint Report
@@ -78,14 +106,14 @@ jobs:
       contents: write
 
     steps:
-      - name: Download APK
+      - name: Download release assets
         uses: actions/download-artifact@v4
         with:
-          name: bosch-ldi-apk
-          path: apk/
+          name: release-assets
+          path: assets/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: apk/*.apk
+          files: assets/*
           generate_release_notes: true
