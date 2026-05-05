@@ -231,4 +231,35 @@ class BleManagerTest {
 
         assertEquals(BleState.Disconnected, m.state.value)
     }
+
+    @Test
+    fun `onConnectionStateChange DISCONNECTED while Connected triggers re-advertise`() = runTest {
+        val mockAdvertiser = mockk<android.bluetooth.le.BluetoothLeAdvertiser>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns mockAdvertiser
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+
+        val m = manager()
+        m.start(bondedAddress = "AA:BB:CC:DD:EE:FF")
+        m.gattCallback.onConnectionStateChange(
+            mockGatt, BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_DISCONNECTED
+        )
+
+        assertEquals(BleState.Advertising("AA:BB:CC:DD:EE:FF"), m.state.value)
+    }
+
+    @Test
+    fun `disconnect then start re-enters Advertising state`() = runTest {
+        val mockAdvertiser = mockk<android.bluetooth.le.BluetoothLeAdvertiser>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns mockAdvertiser
+
+        val m = manager()
+        m.start(bondedAddress = null)
+        assertEquals(BleState.Advertising(null), m.state.value)
+
+        m.disconnect()
+        assertEquals(BleState.Disconnected, m.state.value)
+
+        m.start(bondedAddress = null)
+        assertEquals(BleState.Advertising(null), m.state.value)
+    }
 }

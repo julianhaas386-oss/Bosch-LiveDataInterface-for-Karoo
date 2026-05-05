@@ -157,7 +157,24 @@ class BleManager(
                             watchdogJob?.cancel()
                             watchdogJob = null
                             _state.value = BleState.Disconnected
-                            // Reconnect is added in Task 9
+                            val lastAddress = bondedAddress
+                            Log.i(TAG, "Link loss detected — re-advertising for reconnect")
+                            val advertiser = adapter.bluetoothLeAdvertiser
+                            if (advertiser != null) {
+                                val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                                context.registerReceiver(bondReceiver, filter)
+                                val settings = AdvertiseSettings.Builder()
+                                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                                    .setConnectable(true)
+                                    .setTimeout(0)
+                                    .build()
+                                val data = AdvertiseData.Builder()
+                                    .setIncludeDeviceName(true)
+                                    .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
+                                    .build()
+                                advertiser.startAdvertising(settings, data, advertiseCallback)
+                                _state.value = BleState.Advertising(lastAddress)
+                            }
                         }
                     }
                 }
