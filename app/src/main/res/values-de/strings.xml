@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Bosch LiveDataInterface</string>
+    <string name="extension_name">Bosch eBike</string>
+
+    <!-- DataType: Geschwindigkeit -->
+    <string name="field_speed_name">eBike-Geschwindigkeit</string>
+    <string name="field_speed_desc">Geschwindigkeit vom Bosch eBike-Antriebssystem</string>
+
+    <!-- DataType: Kadenz -->
+    <string name="field_cadence_name">Kadenz (eBike)</string>
+    <string name="field_cadence_desc">Trittfrequenz gemessen vom eBike-System</string>
+
+    <!-- DataType: Fahrerleistung -->
+    <string name="field_rider_power_name">Fahrerleistung</string>
+    <string name="field_rider_power_desc">Fahrerleistung in Watt (ohne Motorunterst&#xfc;tzung)</string>
+
+    <!-- DataType: Akkustand -->
+    <string name="field_battery_soc_name">eBike-Akku</string>
+    <string name="field_battery_soc_desc">Ladezustand des eBike-Akkus in Prozent</string>
+
+    <!-- DataType: Gesamtkilometer -->
+    <string name="field_odometer_name">eBike-Gesamtstrecke</string>
+    <string name="field_odometer_desc">Gesamte zur&#xfc;ckgelegte Strecke des eBikes</string>
+
+    <!-- DataType: Zeit -->
+    <string name="field_time_name">eBike-Zeit</string>
+    <string name="field_time_desc">Aktuelle UTC-Zeit vom eBike-System</string>
+
+    <!-- DataType: Fahrradlicht -->
+    <string name="field_bike_light_name">Fahrradlicht</string>
+    <string name="field_bike_light_desc">Aktueller Status des eBike-Lichtsystems</string>
+    <string name="field_bike_light_on">AN</string>
+    <string name="field_bike_light_off">AUS</string>
+
+    <!-- DataType: Umgebungshelligkeit -->
+    <string name="field_ambient_brightness_name">Umgebungshelligkeit</string>
+    <string name="field_ambient_brightness_desc">Gemessene Umgebungslichts&#x74;&#xe4;rke vom eBike-Sensor</string>
+
+    <!-- DataType: Lichtreserve -->
+    <string name="field_light_reserve_name">Lichtreserve</string>
+    <string name="field_light_reserve_desc">Zeigt an, ob die Lichtreserve aktiv ist</string>
+    <string name="field_light_reserve_active">AKTIV</string>
+    <string name="field_light_reserve_inactive">OK</string>
+
+    <!-- DataType: System gesperrt -->
+    <string name="field_system_locked_name">System gesperrt</string>
+    <string name="field_system_locked_desc">Zeigt an, ob das eBike-System gesperrt ist</string>
+    <string name="field_system_locked_yes">GESPERRT</string>
+    <string name="field_system_locked_no">ENTSPERRT</string>
+
+    <!-- DataType: Ladegerät -->
+    <string name="field_charger_connected_name">Ladeger&#xe4;t</string>
+    <string name="field_charger_connected_desc">Zeigt an, ob ein Ladeger&#xe4;t am eBike angeschlossen ist</string>
+    <string name="field_charger_connected_yes">VERBUNDEN</string>
+    <string name="field_charger_connected_no">GETRENNT</string>
+
+    <!-- DataType: Diagnose -->
+    <string name="field_diagnosis_name">Diagnose</string>
+    <string name="field_diagnosis_desc">Zeigt an, ob ein Diagnoseger&#xe4;t angeschlossen ist (z.B. beim H&#xe4;ndler)</string>
+    <string name="field_diagnosis_active">AKTIV</string>
+    <string name="field_diagnosis_inactive">INAKTIV</string>
+
+    <!-- DataType: Fahrrad steht -->
+    <string name="field_bike_not_driving_name">Fahrrad steht</string>
+    <string name="field_bike_not_driving_desc">Zeigt an, ob das Fahrrad stillsteht</string>
+    <string name="field_bike_not_driving_yes">STEHT</string>
+    <string name="field_bike_not_driving_no">F&#xe4;HRT</string>
+
+    <!-- DataType: Verbindungsstatus -->
+    <string name="field_connection_name">eBike-Verbindung</string>
+    <string name="field_connection_desc">BLE-Verbindungsstatus zum Bosch eBike</string>
+    <string name="field_connection_connected">VERBUNDEN</string>
+    <string name="field_connection_searching">SUCHE&#x2026;</string>
+    <string name="field_connection_disconnected">GETRENNT</string>
+
+    <!-- Seite: eBike-Dashboard -->
+    <string name="page_dashboard_name">eBike-Dashboard</string>
+    <string name="page_dashboard_desc">Alle Bosch eBike Livedaten auf einen Blick</string>
+
+    <!-- Pairing-Wizard -->
+    <string name="wizard_title">eBike verbinden</string>
+    <string name="wizard_step1_title">So funktioniert es</string>
+    <string name="wizard_step1_body">Dein Karoo sendet ein Bluetooth-Signal. Dein Bosch eBike erkennt es und baut die Verbindung auf. Stelle sicher, dass dein eBike eingeschaltet und in der N&#xe4;he ist (ca. 10 m).</string>
+    <string name="wizard_step2_title">Suche l&#xe4;uft&#x2026;</string>
+    <string name="wizard_step2_body">Dein Karoo sendet nun ein Bluetooth-Signal. Best&#xe4;tige die Verbindung am eBike-Display, wenn du dazu aufgefordert wirst.</string>
+    <string name="wizard_step3_success_title">Verbunden!</string>
+    <string name="wizard_step3_success_body">Dein eBike wurde erfolgreich gekoppelt. Livedaten erscheinen jetzt in deinen Fahrprofilen.</string>
+    <string name="wizard_step3_failure_title">Kein eBike gefunden</string>
+    <string name="wizard_step3_failure_body">Innerhalb von 60 Sekunden wurde kein Bosch eBike gefunden. Bitte stelle sicher, dass dein eBike eingeschaltet und in der N&#xe4;he ist, und versuche es erneut.</string>
+    <string name="wizard_btn_next">Weiter</string>
+    <string name="wizard_btn_start">Kopplung starten</string>
+    <string name="wizard_btn_retry">Nochmal versuchen</string>
+    <string name="wizard_btn_done">Fertig</string>
+    <string name="wizard_btn_cancel">Abbrechen</string>
+    <string name="wizard_security_note">Hinweis: Die Kopplung verwendet Bluetooth LE Secure Connections (Just Works). Verschl&#xfc;sselung ist aktiv, aber ohne Man-in-the-Middle-Schutz. Koppel nur in vertrauensw&#xfc;rdiger Umgebung.</string>
+
+    <!-- Bike-Verwaltung -->
+    <string name="bike_list_title">Meine eBikes</string>
+    <string name="bike_list_empty">Noch kein eBike gekoppelt.\nTippe auf +, um dein erstes eBike hinzuzuf&#xfc;gen.</string>
+    <string name="bike_list_btn_add">Neues eBike koppeln</string>
+    <string name="bike_detail_title">eBike-Einstellungen</string>
+    <string name="bike_detail_name_label">Name</string>
+    <string name="bike_detail_name_hint">z.B. Trek Allant+</string>
+    <string name="bike_detail_active_label">Aktiv (mit diesem eBike verbinden)</string>
+    <string name="bike_detail_fields_title">Datenfelder</string>
+    <string name="bike_detail_fields_subtitle">W&#xe4;hle, welche Felder in deinen Fahrprofilen erscheinen</string>
+    <string name="bike_detail_btn_remove">eBike vergessen</string>
+    <string name="bike_detail_btn_save">Speichern</string>
+    <string name="bike_detail_remove_confirm_title">eBike vergessen?</string>
+    <string name="bike_detail_remove_confirm_body">Die Kopplung f&#xfc;r \"%s\" wird entfernt. Du kannst jederzeit neu koppeln.</string>
+    <string name="bike_detail_remove_confirm_ok">Vergessen</string>
+    <string name="bike_detail_remove_confirm_cancel">Abbrechen</string>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_language_label">Sprache</string>
+    <string name="settings_language_system">Systemsprache</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_version_label">Version</string>
+
+    <!-- Allgemein -->
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Abbrechen</string>
+    <string name="error_ble_unavailable">Bluetooth ist auf diesem Ger&#xe4;t nicht verf&#xfc;gbar.</string>
+    <string name="error_permissions_required">Bluetooth-Berechtigungen sind f&#xfc;r die eBike-Verbindung erforderlich.</string>
+    <string name="error_permissions_open_settings">Einstellungen &#xf6;ffnen</string>
+</resources>

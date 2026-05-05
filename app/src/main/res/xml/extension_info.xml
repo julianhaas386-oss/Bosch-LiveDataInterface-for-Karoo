@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bosch LiveDataInterface for Karoo — Extension Declaration
+    Registers 13 Bosch data points + 1 connection status field + 1 dashboard page
+    with the Karoo OS.
+
+    DataType IDs follow the proto field names from ebike_live_data.proto.
+    Bosch LDI Spec v1.0.0 — https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo
+-->
+<ExtensionInfo
+    displayName="@string/extension_name"
+    icon="@drawable/ic_launcher_foreground"
+    id="bosch-ldi"
+    scansDevices="false">
+
+    <!-- ── Ride Performance ───────────────────────────────────────── -->
+
+    <!-- Speed from the Bosch eBike drive (1/100 km/h → converted to km/h or mph) -->
+    <DataType
+        typeId="bosch_ldi_speed"
+        displayName="@string/field_speed_name"
+        description="@string/field_speed_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Rider cadence in rpm -->
+    <DataType
+        typeId="bosch_ldi_cadence"
+        displayName="@string/field_cadence_name"
+        description="@string/field_cadence_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Rider power in watts (rider only, no motor assistance) -->
+    <DataType
+        typeId="bosch_ldi_rider_power"
+        displayName="@string/field_rider_power_name"
+        description="@string/field_rider_power_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- ── Battery & System ───────────────────────────────────────── -->
+
+    <!-- eBike battery state of charge in percent (0–100) -->
+    <DataType
+        typeId="bosch_ldi_battery_soc"
+        displayName="@string/field_battery_soc_name"
+        description="@string/field_battery_soc_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Total distance traveled by the eBike in meters (odometer) -->
+    <DataType
+        typeId="bosch_ldi_odometer"
+        displayName="@string/field_odometer_name"
+        description="@string/field_odometer_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- UTC time from the eBike system -->
+    <DataType
+        typeId="bosch_ldi_time"
+        displayName="@string/field_time_name"
+        description="@string/field_time_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- ── Light ──────────────────────────────────────────────────── -->
+
+    <!-- Light state (OFF / ON) -->
+    <DataType
+        typeId="bosch_ldi_bike_light"
+        displayName="@string/field_bike_light_name"
+        description="@string/field_bike_light_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Ambient brightness in lux (1/1000 lux raw → converted) -->
+    <DataType
+        typeId="bosch_ldi_ambient_brightness"
+        displayName="@string/field_ambient_brightness_name"
+        description="@string/field_ambient_brightness_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Light reserve state active (bool) -->
+    <DataType
+        typeId="bosch_ldi_light_reserve_state"
+        displayName="@string/field_light_reserve_name"
+        description="@string/field_light_reserve_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- ── System Status ──────────────────────────────────────────── -->
+
+    <!-- System locked (bool) -->
+    <DataType
+        typeId="bosch_ldi_system_locked"
+        displayName="@string/field_system_locked_name"
+        description="@string/field_system_locked_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Charger connected (bool) -->
+    <DataType
+        typeId="bosch_ldi_charger_connected"
+        displayName="@string/field_charger_connected_name"
+        description="@string/field_charger_connected_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Diagnosis tool active, e.g. at bike dealer (bool) -->
+    <DataType
+        typeId="bosch_ldi_diagnosis_program_active"
+        displayName="@string/field_diagnosis_name"
+        description="@string/field_diagnosis_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- Bike is standing still (bool) -->
+    <DataType
+        typeId="bosch_ldi_bike_not_driving"
+        displayName="@string/field_bike_not_driving_name"
+        description="@string/field_bike_not_driving_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- ── App-derived Status Field (not a Bosch data point) ─────── -->
+
+    <!-- BLE connection status: CONNECTED / SEARCHING / DISCONNECTED -->
+    <DataType
+        typeId="bosch_ldi_connection"
+        displayName="@string/field_connection_name"
+        description="@string/field_connection_desc"
+        icon="@drawable/ic_launcher_foreground" />
+
+    <!-- ── Dashboard Page ─────────────────────────────────────────── -->
+
+    <!-- Dedicated eBike overview page with SOC, power, cadence, speed + odometer -->
+    <DataType
+        typeId="bosch_ldi_ebike_dashboard"
+        displayName="@string/page_dashboard_name"
+        description="@string/page_dashboard_desc"
+        icon="@drawable/ic_launcher_foreground"
+        graphical="true" />
+
+</ExtensionInfo>
