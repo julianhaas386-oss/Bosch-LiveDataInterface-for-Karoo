@@ -12,6 +12,9 @@
     <uses-permission
         android:maxSdkVersion="30"
         android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission
+        android:maxSdkVersion="30"
+        android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Legacy BLE permissions for API < 31 -->
     <uses-permission
         android:maxSdkVersion="30"
