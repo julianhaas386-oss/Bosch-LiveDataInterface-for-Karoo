@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.CHARACTERISTIC_UUID
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.SERVICE_UUID
+import de.dxmedia.bosch.ldi.ble.BleManager.Companion.TARGET_MTU
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -136,5 +137,41 @@ class BleManagerTest {
         m.gattCallback.onServicesDiscovered(mockGatt, BluetoothGatt.GATT_SUCCESS)
 
         io.mockk.verify { mockGatt.disconnect() }
+    }
+
+    @Test
+    fun `onMtuChanged with mtu less than 247 disconnects`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+
+        val m = manager()
+        m.gattCallback.onMtuChanged(mockGatt, 23, BluetoothGatt.GATT_SUCCESS)
+
+        io.mockk.verify { mockGatt.disconnect() }
+    }
+
+    @Test
+    fun `onMtuChanged with mtu 247 requests HIGH connection priority`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+
+        val m = manager()
+        m.gattCallback.onMtuChanged(mockGatt, 247, BluetoothGatt.GATT_SUCCESS)
+
+        io.mockk.verify {
+            mockGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+        }
+    }
+
+    @Test
+    fun `requestMtu is called after service discovery`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        val mockService = mockk<android.bluetooth.BluetoothGattService>(relaxed = true)
+        val mockChar = mockk<android.bluetooth.BluetoothGattCharacteristic>(relaxed = true)
+        every { mockGatt.getService(SERVICE_UUID) } returns mockService
+        every { mockService.getCharacteristic(CHARACTERISTIC_UUID) } returns mockChar
+
+        val m = manager()
+        m.gattCallback.onServicesDiscovered(mockGatt, BluetoothGatt.GATT_SUCCESS)
+
+        io.mockk.verify { mockGatt.requestMtu(TARGET_MTU) }
     }
 }

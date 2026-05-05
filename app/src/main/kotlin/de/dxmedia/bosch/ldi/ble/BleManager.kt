@@ -179,6 +179,23 @@ class BleManager(
                 }
             }
         }
+
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            scope.launch {
+                mutex.withLock {
+                    mtuChannel.trySend(mtu)
+                    if (status != BluetoothGatt.GATT_SUCCESS || mtu < TARGET_MTU) {
+                        Log.e(TAG, "MTU negotiated=$mtu (need $TARGET_MTU) — disconnecting (LDI-003)")
+                        gatt.disconnect()
+                        return@withLock
+                    }
+                    Log.i(TAG, "MTU=$mtu OK — requesting HIGH priority (triggers DLE for LDI-001)")
+                    gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                    delay(500L)
+                    // Task 7: enableNotifications(gatt)
+                }
+            }
+        }
     }
 
     private inner class BoschAdvertiseCallback : AdvertiseCallback() {
