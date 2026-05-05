@@ -22,15 +22,18 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
       - name: Build Debug APK
         run: ./gradlew assembleDebug
         env:
           # GitHub Packages auth for io.hammerhead:karoo-ext
           # Add GPR_USER and GPR_KEY as Repository Secrets.
           # GPR_KEY = Personal Access Token with 'read:packages' scope.
+          GPR_USER: ${{ secrets.GPR_USER }}
+          GPR_KEY: ${{ secrets.GPR_KEY }}
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+        env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
 
