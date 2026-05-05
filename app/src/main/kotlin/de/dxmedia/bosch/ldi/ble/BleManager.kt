@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.Closeable
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -58,6 +59,7 @@ class BleManager(
         private const val TAG = "BleManager"
     }
 
+    private val closeableDispatcher: Closeable? = dispatcher as? Closeable
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
     private val mutex = Mutex()
 
@@ -86,6 +88,7 @@ class BleManager(
 
     fun stop() {
         scope.cancel()
+        closeableDispatcher?.close()
         try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
         activeGatt?.disconnect()
         activeGatt?.close()

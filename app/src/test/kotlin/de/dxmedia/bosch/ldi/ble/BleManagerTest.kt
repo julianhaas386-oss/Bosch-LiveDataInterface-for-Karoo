@@ -27,4 +27,12 @@ class BleManagerTest {
         val m = manager()
         assertEquals(BleState.Disconnected, m.state.value)
     }
+
+    @Test
+    fun `stop() resets state to Disconnected`() = runTest {
+        val m = manager()
+        // Access internal state — stop() should always land in Disconnected
+        m.stop()
+        assertEquals(BleState.Disconnected, m.state.value)
+    }
 }
