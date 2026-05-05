@@ -161,6 +161,7 @@ class BleManager(
                             Log.i(TAG, "Link loss detected — re-advertising for reconnect")
                             val advertiser = adapter.bluetoothLeAdvertiser
                             if (advertiser != null) {
+                                try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
                                 val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                                 context.registerReceiver(bondReceiver, filter)
                                 val settings = AdvertiseSettings.Builder()
