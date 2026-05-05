@@ -1,5 +1,6 @@
 package de.dxmedia.bosch.ldi.ble
 
+import org.junit.Assert.assertSame
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -9,7 +10,7 @@ class BleStateTest {
 
     @Test
     fun `Disconnected is a singleton object`() {
-        assertEquals(BleState.Disconnected, BleState.Disconnected)
+        assertSame(BleState.Disconnected, BleState.Disconnected)
     }
 
     @Test
@@ -48,5 +49,15 @@ class BleStateTest {
             BleState.Connected("AA:BB:CC:DD:EE:FF"),
             BleState.Connected("11:22:33:44:55:66")
         )
+    }
+
+    @Test
+    fun `two Advertising with null address are equal`() {
+        assertEquals(BleState.Advertising(null), BleState.Advertising(null))
+    }
+
+    @Test
+    fun `two Advertising with different addresses are not equal`() {
+        assertNotEquals(BleState.Advertising("AA:BB:CC:DD:EE:FF"), BleState.Advertising("11:22:33:44:55:66"))
     }
 }
