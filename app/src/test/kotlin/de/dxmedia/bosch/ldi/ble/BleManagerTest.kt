@@ -116,6 +116,7 @@ class BleManagerTest {
     @Test
     fun `onConnectionStateChange DISCONNECTED sets state to Disconnected`() = runTest {
         val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        every { mockAdapter.bluetoothLeAdvertiser } returns null // no advertiser → no re-advertise
 
         val m = manager()
         m.gattCallback.onConnectionStateChange(
@@ -216,6 +217,7 @@ class BleManagerTest {
         val m = manager()
         val received = mutableListOf<ByteArray>()
         val job = launch { m.notifications.collect { received.add(it) } }
+        advanceUntilIdle() // let collect subscribe before emission
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             m.gattCallback.onCharacteristicChanged(mockGatt, mockChar, payload)
