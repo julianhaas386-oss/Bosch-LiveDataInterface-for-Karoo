@@ -12,6 +12,7 @@ import de.dxmedia.bosch.ldi.ble.BleManager.Companion.TARGET_MTU
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test

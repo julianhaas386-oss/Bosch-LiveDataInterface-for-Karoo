@@ -13,7 +13,7 @@ class BoschLiveDataServiceTest {
             .firstOrNull { it.name == "bleManager" }
         assertNotNull(field, "bleManager field must be declared on BoschLiveDataService")
         assertTrue(
-            BleManager::class.java.isAssignableFrom(field.type),
+            BleManager::class.java.isAssignableFrom(field!!.type),
             "bleManager must be of type BleManager"
         )
     }
