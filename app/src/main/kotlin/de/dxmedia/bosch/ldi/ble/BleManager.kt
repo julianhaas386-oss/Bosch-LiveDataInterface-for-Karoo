@@ -132,7 +132,53 @@ class BleManager(
     }
 
     inner class GattCallback : BluetoothGattCallback() {
-        // Tasks 5–9
+
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            scope.launch {
+                mutex.withLock {
+                    when (newState) {
+                        BluetoothProfile.STATE_CONNECTED -> {
+                            Log.i(TAG, "GATT connected — starting service discovery")
+                            activeGatt = gatt
+                            _state.value = BleState.Connected(gatt.device.address)
+                            gatt.discoverServices()
+                        }
+                        BluetoothProfile.STATE_DISCONNECTED -> {
+                            Log.i(TAG, "GATT disconnected (status=$status)")
+                            gatt.close()
+                            activeGatt = null
+                            ldiCharacteristic = null
+                            watchdogJob?.cancel()
+                            watchdogJob = null
+                            _state.value = BleState.Disconnected
+                            // Reconnect is added in Task 9
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            scope.launch {
+                mutex.withLock {
+                    if (status != BluetoothGatt.GATT_SUCCESS) {
+                        Log.e(TAG, "Service discovery failed: status=$status")
+                        gatt.disconnect()
+                        return@withLock
+                    }
+                    val service = gatt.getService(SERVICE_UUID)
+                    val characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
+                    if (characteristic == null) {
+                        Log.e(TAG, "LDI service or characteristic not found — disconnecting")
+                        gatt.disconnect()
+                        return@withLock
+                    }
+                    ldiCharacteristic = characteristic
+                    Log.i(TAG, "LDI characteristic found — requesting MTU")
+                    gatt.requestMtu(TARGET_MTU)
+                }
+            }
+        }
     }
 
     private inner class BoschAdvertiseCallback : AdvertiseCallback() {

@@ -1,7 +1,11 @@
 package de.dxmedia.bosch.ldi.ble
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothProfile
 import android.content.Context
+import de.dxmedia.bosch.ldi.ble.BleManager.Companion.CHARACTERISTIC_UUID
+import de.dxmedia.bosch.ldi.ble.BleManager.Companion.SERVICE_UUID
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,5 +84,57 @@ class BleManagerTest {
         m.start(null)
 
         assertEquals(BleState.Disconnected, m.state.value)
+    }
+
+    @Test
+    fun `onConnectionStateChange CONNECTED starts service discovery`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        val mockDevice = mockk<android.bluetooth.BluetoothDevice>(relaxed = true)
+        every { mockGatt.device } returns mockDevice
+        every { mockDevice.address } returns "AA:BB:CC:DD:EE:FF"
+        every { mockGatt.discoverServices() } returns true
+
+        val m = manager()
+        m.gattCallback.onConnectionStateChange(
+            mockGatt, BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_CONNECTED
+        )
+
+        io.mockk.verify { mockGatt.discoverServices() }
+    }
+
+    @Test
+    fun `onConnectionStateChange DISCONNECTED sets state to Disconnected`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+
+        val m = manager()
+        m.gattCallback.onConnectionStateChange(
+            mockGatt, BluetoothGatt.GATT_SUCCESS, BluetoothProfile.STATE_DISCONNECTED
+        )
+
+        assertEquals(BleState.Disconnected, m.state.value)
+    }
+
+    @Test
+    fun `onServicesDiscovered GATT_SUCCESS with missing service disconnects`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        every { mockGatt.getService(SERVICE_UUID) } returns null
+
+        val m = manager()
+        m.gattCallback.onServicesDiscovered(mockGatt, BluetoothGatt.GATT_SUCCESS)
+
+        io.mockk.verify { mockGatt.disconnect() }
+    }
+
+    @Test
+    fun `onServicesDiscovered with missing characteristic disconnects`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        val mockService = mockk<android.bluetooth.BluetoothGattService>(relaxed = true)
+        every { mockGatt.getService(SERVICE_UUID) } returns mockService
+        every { mockService.getCharacteristic(CHARACTERISTIC_UUID) } returns null
+
+        val m = manager()
+        m.gattCallback.onServicesDiscovered(mockGatt, BluetoothGatt.GATT_SUCCESS)
+
+        io.mockk.verify { mockGatt.disconnect() }
     }
 }
