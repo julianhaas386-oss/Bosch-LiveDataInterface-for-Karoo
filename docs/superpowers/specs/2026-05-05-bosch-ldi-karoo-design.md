@@ -92,22 +92,22 @@ app/src/main/kotlin/de/dxmedia/bosch/ldi/
   - LDI-002: Unveränderte Felder können in Notifications enthalten sein → ignorieren
   - LDI-003: eBike trennt bei unzureichendem MTU/DLE nicht → App muss Korrektheit sicherstellen
 
-### Verfügbare Datenpunkte
-| Feld | Typ | Einheit |
-|---|---|---|
-| speed | uint16 | Einheit aus Proto verifizieren (vermutlich mm/s oder cm/s) |
-| cadence | uint16 | rpm |
-| rider_power | uint16 | W |
-| battery_soc | uint8 | % |
-| odometer | uint32 | m |
-| time | — | Systemzeit |
-| light_status | bool | — |
-| ambient_brightness | uint32 | lux |
-| light_reserve | bool | — |
-| system_lock | bool | — |
-| bike_not_driving | bool | — |
-| charger_connected | bool | — |
-| diagnosis_connected | bool | — |
+### Verfügbare Datenpunkte (exakt aus `ebike_live_data.proto`)
+| Proto-Feldname | Proto-Typ | Einheit | Feldnummer |
+|---|---|---|---|
+| speed | uint32 | 1/100 km/h (→ ÷100 für km/h) | 1 |
+| cadence | int32 | rpm | 2 |
+| rider_power | uint32 | W | 5 |
+| ambient_brightness | uint32 | 1/1000 lux (→ ÷1000 für lux) | 9 |
+| battery_soc | uint32 | % (0–100) | 10 |
+| time | int64 | Unix-Sekunden UTC | 11 |
+| odometer | uint32 | m | 12 |
+| bike_light | LightState (enum) | OFF=1, ON=2, INVALID=0 | 17 |
+| system_locked | bool | — | 21 |
+| charger_connected | bool | — | 22 |
+| light_reserve_state | bool | — | 23 |
+| diagnosis_program_active | bool | — | 24 |
+| bike_not_driving | bool | — | 25 |
 
 ---
 
@@ -178,7 +178,8 @@ data class BikeProfile(
 
 ### DataTypes (extension_info.xml)
 13 DataType-Einträge mit je eigenem `typeId`, `displayName`, `description`, `icon`.  
-Namenskonvention: `bosch_ldi_speed`, `bosch_ldi_cadence`, `bosch_ldi_rider_power`, usw.
+Namenskonvention orientiert sich an Proto-Feldnamen:
+`bosch_ldi_speed`, `bosch_ldi_cadence`, `bosch_ldi_rider_power`, `bosch_ldi_battery_soc`, `bosch_ldi_odometer`, `bosch_ldi_time`, `bosch_ldi_bike_light`, `bosch_ldi_ambient_brightness`, `bosch_ldi_light_reserve_state`, `bosch_ldi_system_locked`, `bosch_ldi_charger_connected`, `bosch_ldi_diagnosis_program_active`, `bosch_ldi_bike_not_driving`, `bosch_ldi_connection` (app-eigen)
 
 ### EBikePage
 - Registriert als Karoo Page in `extension_info.xml`
