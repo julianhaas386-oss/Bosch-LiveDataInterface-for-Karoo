@@ -15,7 +15,7 @@ class BleStateTest {
 
     @Test
     fun `Disconnected differs from Advertising`() {
-        assertNotEquals(BleState.Disconnected, BleState.Advertising(null))
+        assertNotEquals<BleState>(BleState.Disconnected, BleState.Advertising(null))
     }
 
     @Test
