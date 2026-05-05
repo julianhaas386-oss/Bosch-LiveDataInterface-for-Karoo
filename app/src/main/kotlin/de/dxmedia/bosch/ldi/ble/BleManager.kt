@@ -279,6 +279,7 @@ open class BleManager(
             .setTimeout(0)
             .build()
 
+    @SuppressLint("NewApi") // addServiceSolicitationUuid requires API 31; Karoo runs API 31+
     internal open fun buildAdvertiseData(): AdvertiseData =
         AdvertiseData.Builder()
             .setIncludeDeviceName(true)
