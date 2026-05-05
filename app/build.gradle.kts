@@ -2,42 +2,82 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.protobuf)
 }
 
 android {
-    namespace = "io.hammerhead.karooexttemplate"
-    compileSdk = 34
+    namespace = "de.dxmedia.bosch.ldi"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.hammerhead.karooexttemplate"
+        applicationId = "de.dxmedia.bosch.ldi"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        debug {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") { option("lite") }
+                create("kotlin") { option("lite") }
+            }
+        }
     }
 }
 
 dependencies {
     implementation(libs.hammerhead.karoo.ext)
+
     implementation(libs.androidx.core.ktx)
-    implementation(libs.bundles.androidx.lifeycle)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.bundles.androidx.lifecycle)
     implementation(libs.androidx.activity.compose)
     implementation(libs.bundles.compose.ui)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
+
+    implementation(libs.protobuf.kotlin.lite)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
