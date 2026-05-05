@@ -192,9 +192,92 @@ class BleManager(
                     Log.i(TAG, "MTU=$mtu OK — requesting HIGH priority (triggers DLE for LDI-001)")
                     gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
                     delay(500L)
-                    // Task 7: enableNotifications(gatt)
+                    enableNotifications(gatt)
                 }
             }
+        }
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
+        ) {
+            cccdChannel.trySend(status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.i(TAG, "CCCD written — notifications enabled, watchdog armed")
+                scope.launch { resetWatchdog() }
+            } else {
+                Log.e(TAG, "CCCD write failed: status=$status — disconnecting")
+                scope.launch { mutex.withLock { disconnectInternal() } }
+            }
+        }
+
+        @Deprecated("Deprecated in Android 13 (API 33)")
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                @Suppress("DEPRECATION")
+                handleNotification(characteristic.value ?: return)
+            }
+        }
+
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            handleNotification(value)
+        }
+    }
+
+    private fun enableNotifications(gatt: BluetoothGatt) {
+        val characteristic = ldiCharacteristic ?: return
+        gatt.setCharacteristicNotification(characteristic, true)
+        val cccd = characteristic.getDescriptor(CCCD_UUID) ?: run {
+            Log.e(TAG, "CCCD descriptor not found — disconnecting")
+            gatt.disconnect()
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeDescriptor(cccd, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+        } else {
+            @Suppress("DEPRECATION")
+            cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            @Suppress("DEPRECATION")
+            gatt.writeDescriptor(cccd)
+        }
+    }
+
+    private fun handleNotification(value: ByteArray) {
+        scope.launch {
+            if (value.size > MAX_PROTO_BYTES) {
+                Log.e(TAG, "Proto payload ${value.size}B > 16KB limit — disconnecting")
+                mutex.withLock { disconnectInternal() }
+                return@launch
+            }
+            val now = System.currentTimeMillis()
+            if (now - notificationWindowStart >= 1_000L) {
+                notificationWindowStart = now
+                notificationWindowCount = 0
+            }
+            notificationWindowCount++
+            if (notificationWindowCount > MAX_NOTIFICATIONS_PER_SECOND) {
+                Log.w(TAG, "Rate limit exceeded — dropping notification")
+                return@launch
+            }
+            resetWatchdog()
+            _notifications.tryEmit(value)
+        }
+    }
+
+    private fun resetWatchdog() {
+        watchdogJob?.cancel()
+        watchdogJob = scope.launch {
+            delay(NOTIFICATION_WATCHDOG_MS)
+            Log.e(TAG, "No notification for ${NOTIFICATION_WATCHDOG_MS}ms — disconnecting")
+            mutex.withLock { disconnectInternal() }
         }
     }
 

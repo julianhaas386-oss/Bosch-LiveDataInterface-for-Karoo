@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.os.Build
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.CHARACTERISTIC_UUID
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.SERVICE_UUID
 import de.dxmedia.bosch.ldi.ble.BleManager.Companion.TARGET_MTU
@@ -173,5 +174,50 @@ class BleManagerTest {
         m.gattCallback.onServicesDiscovered(mockGatt, BluetoothGatt.GATT_SUCCESS)
 
         io.mockk.verify { mockGatt.requestMtu(TARGET_MTU) }
+    }
+
+    @Test
+    fun `notifications larger than 16KB are dropped`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        val mockChar = mockk<android.bluetooth.BluetoothGattCharacteristic>(relaxed = true)
+        val largePayload = ByteArray(17 * 1024)
+
+        val m = manager()
+        val received = mutableListOf<ByteArray>()
+        val job = launch { m.notifications.collect { received.add(it) } }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            m.gattCallback.onCharacteristicChanged(mockGatt, mockChar, largePayload)
+        } else {
+            every { mockChar.value } returns largePayload
+            @Suppress("DEPRECATION")
+            m.gattCallback.onCharacteristicChanged(mockGatt, mockChar)
+        }
+
+        job.cancel()
+        assertEquals(0, received.size)
+    }
+
+    @Test
+    fun `valid notifications are emitted to notifications flow`() = runTest {
+        val mockGatt = mockk<BluetoothGatt>(relaxed = true)
+        val mockChar = mockk<android.bluetooth.BluetoothGattCharacteristic>(relaxed = true)
+        val payload = byteArrayOf(1, 2, 3, 4)
+
+        val m = manager()
+        val received = mutableListOf<ByteArray>()
+        val job = launch { m.notifications.collect { received.add(it) } }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            m.gattCallback.onCharacteristicChanged(mockGatt, mockChar, payload)
+        } else {
+            every { mockChar.value } returns payload
+            @Suppress("DEPRECATION")
+            m.gattCallback.onCharacteristicChanged(mockGatt, mockChar)
+        }
+
+        job.cancel()
+        assertEquals(1, received.size)
+        assertEquals(payload.toList(), received[0].toList())
     }
 }
