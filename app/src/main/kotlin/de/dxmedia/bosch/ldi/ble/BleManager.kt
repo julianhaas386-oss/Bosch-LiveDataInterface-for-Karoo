@@ -1,5 +1,6 @@
 package de.dxmedia.bosch.ldi.ble
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -55,6 +56,7 @@ import java.util.UUID
  * Exposes [state] ([BleState]) and [notifications] (raw Protobuf [ByteArray]) as flows
  * for upstream consumers ([BoschLiveDataService], DataTypeProvider in Briefing 4).
  */
+@SuppressLint("MissingPermission")
 open class BleManager(
     private val context: Context,
     private val adapter: BluetoothAdapter =
