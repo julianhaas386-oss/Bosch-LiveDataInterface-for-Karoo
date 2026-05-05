@@ -40,6 +40,21 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
+/**
+ * Manages the full BLE lifecycle for the Bosch LiveDataInterface:
+ * advertising (GAP Peripheral), GATT client operations, bonding, and reconnect.
+ *
+ * **Threading:** All state mutations run on a single-threaded [CoroutineScope] and are
+ * additionally protected by [mutex] for atomicity. GATT callbacks from the Android BLE
+ * stack are dispatched into the scope via [kotlinx.coroutines.launch].
+ *
+ * **Lifecycle:** Call [start] to begin advertising (bonded address = null for pairing mode).
+ * The eBike initiates the GATT connection after seeing the solicitation UUID. Call [stop]
+ * from [android.app.Service.onDestroy] to release all resources.
+ *
+ * Exposes [state] ([BleState]) and [notifications] (raw Protobuf [ByteArray]) as flows
+ * for upstream consumers ([BoschLiveDataService], DataTypeProvider in Briefing 4).
+ */
 class BleManager(
     private val context: Context,
     private val adapter: BluetoothAdapter =
@@ -76,6 +91,7 @@ class BleManager(
     private var watchdogJob: Job? = null
     private var notificationWindowStart = 0L
     private var notificationWindowCount = 0
+    private var bondLostPending = false
 
     private val mtuChannel = Channel<Int>(Channel.CONFLATED)
     private val cccdChannel = Channel<Int>(Channel.CONFLATED)
@@ -94,7 +110,10 @@ class BleManager(
                     return@withLock
                 }
                 val settings = AdvertiseSettings.Builder()
-                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                    .setAdvertiseMode(
+                        if (bondedAddress == null) AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
+                        else AdvertiseSettings.ADVERTISE_MODE_BALANCED
+                    )
                     .setConnectable(true)
                     .setTimeout(0)
                     .build()
@@ -134,6 +153,7 @@ class BleManager(
         activeGatt?.close()
         activeGatt = null
         ldiCharacteristic = null
+        bondLostPending = false
         _state.value = BleState.Disconnected
     }
 
@@ -144,6 +164,12 @@ class BleManager(
                 mutex.withLock {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
+                            val expectedAddress = bondedAddress
+                            if (expectedAddress != null && gatt.device.address != expectedAddress) {
+                                Log.w(TAG, "Connection from unexpected device ${gatt.device.address}, expected $expectedAddress — rejecting")
+                                gatt.disconnect()
+                                return@withLock
+                            }
                             Log.i(TAG, "GATT connected — starting service discovery")
                             activeGatt = gatt
                             _state.value = BleState.Connected(gatt.device.address)
@@ -157,25 +183,28 @@ class BleManager(
                             watchdogJob?.cancel()
                             watchdogJob = null
                             _state.value = BleState.Disconnected
-                            val lastAddress = bondedAddress
-                            Log.i(TAG, "Link loss detected — re-advertising for reconnect")
-                            val advertiser = adapter.bluetoothLeAdvertiser
-                            if (advertiser != null) {
-                                try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
-                                val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                                context.registerReceiver(bondReceiver, filter)
-                                val settings = AdvertiseSettings.Builder()
-                                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-                                    .setConnectable(true)
-                                    .setTimeout(0)
-                                    .build()
-                                val data = AdvertiseData.Builder()
-                                    .setIncludeDeviceName(true)
-                                    .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
-                                    .build()
-                                advertiser.startAdvertising(settings, data, advertiseCallback)
-                                _state.value = BleState.Advertising(lastAddress)
+                            if (!bondLostPending) {
+                                val lastAddress = bondedAddress
+                                Log.i(TAG, "Link loss detected — re-advertising for reconnect")
+                                val advertiser = adapter.bluetoothLeAdvertiser
+                                if (advertiser != null) {
+                                    try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
+                                    val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                                    context.registerReceiver(bondReceiver, filter)
+                                    val settings = AdvertiseSettings.Builder()
+                                        .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                                        .setConnectable(true)
+                                        .setTimeout(0)
+                                        .build()
+                                    val data = AdvertiseData.Builder()
+                                        .setIncludeDeviceName(true)
+                                        .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
+                                        .build()
+                                    advertiser.startAdvertising(settings, data, advertiseCallback)
+                                    _state.value = BleState.Advertising(lastAddress)
+                                }
                             }
+                            bondLostPending = false
                         }
                     }
                 }
@@ -229,7 +258,7 @@ class BleManager(
             cccdChannel.trySend(status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.i(TAG, "CCCD written — notifications enabled, watchdog armed")
-                scope.launch { resetWatchdog() }
+                scope.launch { mutex.withLock { resetWatchdog() } }
             } else {
                 Log.e(TAG, "CCCD write failed: status=$status — disconnecting")
                 scope.launch { mutex.withLock { disconnectInternal() } }
@@ -276,23 +305,26 @@ class BleManager(
 
     private fun handleNotification(value: ByteArray) {
         scope.launch {
-            if (value.size > MAX_PROTO_BYTES) {
-                Log.e(TAG, "Proto payload ${value.size}B > 16KB limit — disconnecting")
-                mutex.withLock { disconnectInternal() }
-                return@launch
+            val shouldEmit = mutex.withLock {
+                if (value.size > MAX_PROTO_BYTES) {
+                    Log.e(TAG, "Proto payload ${value.size}B > 16KB limit — disconnecting")
+                    disconnectInternal()
+                    return@withLock false
+                }
+                val now = System.currentTimeMillis()
+                if (now - notificationWindowStart >= 1_000L) {
+                    notificationWindowStart = now
+                    notificationWindowCount = 0
+                }
+                notificationWindowCount++
+                if (notificationWindowCount > MAX_NOTIFICATIONS_PER_SECOND) {
+                    Log.w(TAG, "Rate limit exceeded — dropping notification")
+                    return@withLock false
+                }
+                resetWatchdog()
+                true
             }
-            val now = System.currentTimeMillis()
-            if (now - notificationWindowStart >= 1_000L) {
-                notificationWindowStart = now
-                notificationWindowCount = 0
-            }
-            notificationWindowCount++
-            if (notificationWindowCount > MAX_NOTIFICATIONS_PER_SECOND) {
-                Log.w(TAG, "Rate limit exceeded — dropping notification")
-                return@launch
-            }
-            resetWatchdog()
-            _notifications.tryEmit(value)
+            if (shouldEmit) _notifications.tryEmit(value)
         }
     }
 
@@ -336,6 +368,7 @@ class BleManager(
                 } catch (e: Exception) {
                     Log.e(TAG, "removeBond() reflection failed", e)
                 }
+                bondLostPending = true
                 scope.launch { mutex.withLock { disconnectInternal() } }
             }
         }

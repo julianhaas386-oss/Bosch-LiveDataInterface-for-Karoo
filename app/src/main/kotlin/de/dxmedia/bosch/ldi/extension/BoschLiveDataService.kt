@@ -19,7 +19,7 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
     }
 
     override fun onDestroy() {
-        bleManager.stop()
+        if (::bleManager.isInitialized) bleManager.stop()
         super.onDestroy()
     }
 }
