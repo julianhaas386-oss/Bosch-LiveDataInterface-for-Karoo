@@ -1,0 +1,24 @@
+# Android / Gradle
+.gradle/
+build/
+*.apk
+*.aab
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.so
+
+# DataStore / Room DB
+*.db
+
+# macOS
+.DS_Store
+
+# Superpowers brainstorm (local only)
+.superpowers/
+
+# Bosch documentation (not redistributable)
+*.pdf
