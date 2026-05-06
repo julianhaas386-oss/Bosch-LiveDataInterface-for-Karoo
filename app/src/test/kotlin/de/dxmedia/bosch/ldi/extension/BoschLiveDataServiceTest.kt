@@ -37,4 +37,14 @@ class BoschLiveDataServiceTest {
             "liveData must return StateFlow"
         )
     }
+
+    @Test fun `BoschLiveDataService declares connectionState as StateFlow`() {
+        val field = BoschLiveDataService::class.java.declaredFields
+            .firstOrNull { it.name == "connectionState" }
+        assertNotNull(field, "connectionState field must be declared on BoschLiveDataService")
+        assertTrue(
+            StateFlow::class.java.isAssignableFrom(field!!.type),
+            "connectionState must be of type StateFlow"
+        )
+    }
 }
