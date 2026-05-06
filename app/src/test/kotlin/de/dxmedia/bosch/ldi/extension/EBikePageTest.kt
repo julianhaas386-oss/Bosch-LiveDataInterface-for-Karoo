@@ -37,6 +37,7 @@ class EBikePageTest {
         assertEquals("—", fmt.power)
         assertEquals("—", fmt.cadence)
         assertEquals("—", fmt.speed)
+        assertEquals("Odo: —", fmt.odometer)
     }
 
     @Test fun `speed rounds down to whole km per hour`() {
