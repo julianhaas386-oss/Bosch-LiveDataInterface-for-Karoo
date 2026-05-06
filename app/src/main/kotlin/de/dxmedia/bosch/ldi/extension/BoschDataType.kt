@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 class BoschDataType(
     private val liveData: StateFlow<BoschLiveData?>,
-    internal val typeId: String,
+    typeId: String,
     internal val extract: BoschLiveData.() -> Double?
 ) : DataTypeImpl("bosch-ldi", typeId) {
 
