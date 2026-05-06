@@ -72,10 +72,8 @@ jobs:
             "latestVersion": "${VERSION}",
             "latestVersionCode": ${VERSION_CODE},
             "developer": "dxmedia.de",
-            "description": "Shows live Bosch eBike data — speed, cadence, rider power, battery SOC, odometer and more — directly on your Hammerhead Karoo 2 or 3.",
-            "releaseNotes": "Initial release",
-            "screenshotUrls": [],
-            "tags": ["ebike", "sensor"]
+            "description": "Shows live Bosch eBike data - speed, cadence, rider power, battery SOC, odometer and more - directly on your Hammerhead Karoo 2 or 3.",
+            "releaseNotes": "Initial release"
           }
           EOF
 
