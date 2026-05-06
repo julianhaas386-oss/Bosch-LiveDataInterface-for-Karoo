@@ -2,12 +2,14 @@ package de.dxmedia.bosch.ldi.data
 
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.UUID
+
+enum class BikeSlot(val displayName: String) {
+    ALPHA("Alpha"), BETA("Beta"), GAMMA("Gamma"), DELTA("Delta")
+}
 
 data class BikeProfile(
-    val id: String,
-    val name: String,
-    val bleAddress: String,
+    val slot: BikeSlot,
+    val bleAddress: String?,
     val isActive: Boolean,
     val enabledFields: Set<String> = DEFAULT_FIELDS
 ) {
@@ -30,21 +32,9 @@ data class BikeProfile(
             "bosch_ldi_ebike_dashboard"
         )
 
-        private val NAME_REGEX = Regex("""^[a-zA-Z0-9 _\-]{1,64}$""")
         private val BLE_ADDRESS_REGEX = Regex("""^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$""")
 
-        fun create(name: String, bleAddress: String): BikeProfile = BikeProfile(
-            id = UUID.randomUUID().toString(),
-            name = name,
-            bleAddress = bleAddress,
-            isActive = false
-        )
-
-        fun isValidName(name: String): Boolean =
-            name.isNotBlank() && NAME_REGEX.matches(name)
-
-        fun isValidBleAddress(address: String): Boolean =
-            BLE_ADDRESS_REGEX.matches(address)
+        fun isValidBleAddress(address: String): Boolean = BLE_ADDRESS_REGEX.matches(address)
 
         fun serialize(profiles: List<BikeProfile>): String {
             val arr = JSONArray()
@@ -52,9 +42,8 @@ data class BikeProfile(
                 val fields = JSONArray()
                 p.enabledFields.sorted().forEach { fields.put(it) }
                 arr.put(JSONObject().apply {
-                    put("id", p.id)
-                    put("name", p.name)
-                    put("bleAddress", p.bleAddress)
+                    put("slot", p.slot.name)
+                    put("bleAddress", p.bleAddress ?: JSONObject.NULL)
                     put("isActive", p.isActive)
                     put("enabledFields", fields)
                 })
@@ -68,9 +57,8 @@ data class BikeProfile(
                 val obj = arr.getJSONObject(i)
                 val fieldsArr = obj.getJSONArray("enabledFields")
                 BikeProfile(
-                    id = obj.getString("id"),
-                    name = obj.getString("name"),
-                    bleAddress = obj.getString("bleAddress"),
+                    slot = BikeSlot.valueOf(obj.getString("slot")),
+                    bleAddress = if (obj.isNull("bleAddress")) null else obj.getString("bleAddress"),
                     isActive = obj.getBoolean("isActive"),
                     enabledFields = (0 until fieldsArr.length())
                         .map { fieldsArr.getString(it) }.toSet()

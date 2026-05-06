@@ -3,20 +3,22 @@ package de.dxmedia.bosch.ldi.data
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BikeProfileTest {
 
-    @Test fun `create generates unique non-blank ids`() {
-        val a = BikeProfile.create("Trek", "AA:BB:CC:DD:EE:FF")
-        val b = BikeProfile.create("Trek", "AA:BB:CC:DD:EE:FF")
-        assertTrue(a.id.isNotBlank())
-        assertNotEquals(a.id, b.id)
+    @Test fun `BikeSlot has exactly 4 slots with expected display names`() {
+        assertEquals(4, BikeSlot.values().size)
+        assertEquals("Alpha", BikeSlot.ALPHA.displayName)
+        assertEquals("Beta", BikeSlot.BETA.displayName)
+        assertEquals("Gamma", BikeSlot.GAMMA.displayName)
+        assertEquals("Delta", BikeSlot.DELTA.displayName)
     }
 
-    @Test fun `create sets isActive false and full default field set`() {
-        val p = BikeProfile.create("Trek", "AA:BB:CC:DD:EE:FF")
+    @Test fun `default profile is unpaired and inactive with full default field set`() {
+        val p = BikeProfile(slot = BikeSlot.ALPHA, bleAddress = null, isActive = false)
+        assertNull(p.bleAddress)
         assertFalse(p.isActive)
         assertEquals(BikeProfile.DEFAULT_FIELDS, p.enabledFields)
     }
@@ -25,38 +27,34 @@ class BikeProfileTest {
         assertEquals(15, BikeProfile.DEFAULT_FIELDS.size)
     }
 
-    @Test fun `serialize then deserialize round-trips single profile`() {
-        val original = BikeProfile.create("Trek Allant", "AA:BB:CC:DD:EE:FF")
-            .copy(isActive = true, enabledFields = setOf("bosch_ldi_speed", "bosch_ldi_cadence"))
-        val result = BikeProfile.deserialize(BikeProfile.serialize(listOf(original)))
-        assertEquals(listOf(original), result)
+    @Test fun `serialize then deserialize round-trips paired active profile`() {
+        val original = BikeProfile(
+            slot = BikeSlot.ALPHA,
+            bleAddress = "AA:BB:CC:DD:EE:FF",
+            isActive = true,
+            enabledFields = setOf("bosch_ldi_speed", "bosch_ldi_cadence")
+        )
+        assertEquals(listOf(original), BikeProfile.deserialize(BikeProfile.serialize(listOf(original))))
     }
 
-    @Test fun `serialize then deserialize round-trips multiple profiles`() {
-        val profiles = listOf(
-            BikeProfile.create("Trek", "AA:BB:CC:DD:EE:FF"),
-            BikeProfile.create("Giant", "11:22:33:44:55:66").copy(isActive = true)
-        )
+    @Test fun `serialize then deserialize round-trips unpaired profile`() {
+        val original = BikeProfile(slot = BikeSlot.BETA, bleAddress = null, isActive = false)
+        assertEquals(listOf(original), BikeProfile.deserialize(BikeProfile.serialize(listOf(original))))
+    }
+
+    @Test fun `serialize then deserialize round-trips all 4 slots`() {
+        val profiles = BikeSlot.values().mapIndexed { i, slot ->
+            BikeProfile(
+                slot = slot,
+                bleAddress = if (i == 0) "AA:BB:CC:DD:EE:FF" else null,
+                isActive = i == 0
+            )
+        }
         assertEquals(profiles, BikeProfile.deserialize(BikeProfile.serialize(profiles)))
     }
 
     @Test fun `serialize then deserialize round-trips empty list`() {
-        val result = BikeProfile.deserialize(BikeProfile.serialize(emptyList()))
-        assertTrue(result.isEmpty())
-    }
-
-    @Test fun `isValidName accepts letters digits spaces hyphens underscores`() {
-        assertTrue(BikeProfile.isValidName("Trek Allant"))
-        assertTrue(BikeProfile.isValidName("My_Bike-1"))
-        assertTrue(BikeProfile.isValidName("A".repeat(64)))
-    }
-
-    @Test fun `isValidName rejects blank, all-space, too long, and special chars`() {
-        assertFalse(BikeProfile.isValidName(""))
-        assertFalse(BikeProfile.isValidName("   "))
-        assertFalse(BikeProfile.isValidName("A".repeat(65)))
-        assertFalse(BikeProfile.isValidName("Bike+Pro"))
-        assertFalse(BikeProfile.isValidName("Bike@Home"))
+        assertTrue(BikeProfile.deserialize(BikeProfile.serialize(emptyList())).isEmpty())
     }
 
     @Test fun `isValidBleAddress accepts valid MAC in upper and lower case`() {

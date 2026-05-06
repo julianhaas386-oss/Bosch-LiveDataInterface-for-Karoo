@@ -16,31 +16,36 @@ class BikeRepository(context: Context) {
     )
 
     fun getProfiles(): List<BikeProfile> {
-        val json = prefs.getString(KEY_PROFILES, null) ?: return emptyList()
-        return try {
-            BikeProfile.deserialize(json)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to deserialize profiles — resetting", e)
-            prefs.edit().remove(KEY_PROFILES).apply()
-            emptyList()
+        val json = prefs.getString(KEY_PROFILES, null)
+        val saved = if (json != null) {
+            try {
+                BikeProfile.deserialize(json)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to deserialize profiles — resetting", e)
+                prefs.edit().remove(KEY_PROFILES).apply()
+                emptyList()
+            }
+        } else emptyList()
+        val bySlot = saved.associateBy { it.slot }
+        return BikeSlot.values().map { slot ->
+            bySlot[slot] ?: BikeProfile(slot = slot, bleAddress = null, isActive = false)
         }
     }
 
     fun getActiveProfile(): BikeProfile? = getProfiles().firstOrNull { it.isActive }
 
     fun upsert(profile: BikeProfile) {
-        val profiles = getProfiles().toMutableList()
-        val idx = profiles.indexOfFirst { it.id == profile.id }
-        if (idx >= 0) profiles[idx] = profile else profiles.add(profile)
-        save(profiles)
+        save(getProfiles().map { if (it.slot == profile.slot) profile else it })
     }
 
-    fun delete(id: String) {
-        save(getProfiles().filter { it.id != id })
+    fun delete(slot: BikeSlot) {
+        save(getProfiles().map {
+            if (it.slot == slot) BikeProfile(slot = slot, bleAddress = null, isActive = false) else it
+        })
     }
 
-    fun setActive(id: String) {
-        save(getProfiles().map { it.copy(isActive = it.id == id) })
+    fun setActive(slot: BikeSlot) {
+        save(getProfiles().map { it.copy(isActive = it.slot == slot) })
     }
 
     private fun save(profiles: List<BikeProfile>) {
