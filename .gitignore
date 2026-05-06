@@ -22,3 +22,4 @@ captures/
 
 # Bosch documentation (not redistributable)
 *.pdf
+release.keystore

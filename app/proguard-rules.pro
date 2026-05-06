@@ -20,6 +20,11 @@
 # Kotlin Coroutines
 -keep class kotlinx.coroutines.** { *; }
 
+# Suppress missing compile-time annotation classes (error-prone, javax)
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn javax.annotation.concurrent.**
+
 # Strip Log.d/v from release builds; keep Log.i/w/e for field diagnostics
 -assumenosideeffects class android.util.Log {
     public static *** d(...);

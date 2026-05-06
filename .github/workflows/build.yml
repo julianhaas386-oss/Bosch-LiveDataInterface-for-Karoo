@@ -1,14 +1,17 @@
-name: Build & Lint
+name: Build & Release
 
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build & Lint
+    name: Build, Test & Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -22,32 +25,65 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Decode release keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
         env:
-          # GitHub Packages auth for io.hammerhead:karoo-ext
-          # Add GPR_USER and GPR_KEY as Repository Secrets.
-          # GPR_KEY = Personal Access Token with 'read:packages' scope.
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
+          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testReleaseUnitTest
         env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
 
       - name: Run Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintRelease
         env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
 
-      - name: Upload Debug APK
+      - name: Prepare release assets
+        run: |
+          mkdir -p app/build/outputs/release-assets
+          cp app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/release-assets/app-release.apk
+
+          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | grep -oP '\d+')
+          TAG="${GITHUB_REF_NAME:-0.0.0}"
+          VERSION="${TAG#v}"
+
+          cat > app/build/outputs/release-assets/manifest.json << EOF
+          {
+            "label": "Bosch LiveDataInterface",
+            "packageName": "de.dxmedia.bosch.ldi",
+            "iconUrl": "https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo/releases/latest/download/icon.png",
+            "latestApkUrl": "https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo/releases/latest/download/app-release.apk",
+            "latestVersion": "${VERSION}",
+            "latestVersionCode": ${VERSION_CODE},
+            "developer": "dxmedia.de",
+            "description": "Shows live Bosch eBike data - speed, cadence, rider power, battery SOC, odometer and more - directly on your Hammerhead Karoo 2 or 3.",
+            "releaseNotes": "Initial release"
+          }
+          EOF
+
+          cp icon.png app/build/outputs/release-assets/icon.png
+
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: release-assets
+          path: app/build/outputs/release-assets/
           retention-days: 7
 
       - name: Upload Lint Report
@@ -55,5 +91,26 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
-          path: app/build/reports/lint-results-debug.html
+          path: app/build/reports/lint-results-release.html
           retention-days: 7
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: assets/*
+          generate_release_notes: true
