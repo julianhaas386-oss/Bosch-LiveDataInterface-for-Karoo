@@ -25,23 +25,30 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Decode release keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
         env:
-          # GitHub Packages auth for io.hammerhead:karoo-ext
-          # Add GPR_USER and GPR_KEY as Repository Secrets.
-          # GPR_KEY = Personal Access Token with 'read:packages' scope.
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
+          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testReleaseUnitTest
         env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
 
       - name: Run Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintRelease
         env:
           GPR_USER: ${{ secrets.GPR_USER }}
           GPR_KEY: ${{ secrets.GPR_KEY }}
@@ -49,7 +56,7 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p app/build/outputs/release-assets
-          cp app/build/outputs/apk/debug/app-debug.apk \
+          cp app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/release-assets/app-release.apk
 
           VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | grep -oP '\d+')
@@ -66,7 +73,7 @@ jobs:
             "latestVersionCode": ${VERSION_CODE},
             "developer": "dxmedia.de",
             "description": "Shows live Bosch eBike data — speed, cadence, rider power, battery SOC, odometer and more — directly on your Hammerhead Karoo 2 or 3.",
-            "releaseNotes": "",
+            "releaseNotes": "Initial release",
             "screenshotUrls": [],
             "tags": ["ebike", "sensor"]
           }
@@ -86,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
-          path: app/build/reports/lint-results-debug.html
+          path: app/build/reports/lint-results-release.html
           retention-days: 7
 
   release:
