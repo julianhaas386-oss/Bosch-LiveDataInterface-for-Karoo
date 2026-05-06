@@ -5,6 +5,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BoschDataTypeTest {
 
@@ -109,6 +110,6 @@ class BoschDataTypeTest {
             "bosch_ldi_odometer", "bosch_ldi_bike_light", "bosch_ldi_system_locked",
             "bosch_ldi_charger_connected", "bosch_ldi_light_reserve_state",
             "bosch_ldi_diagnosis_program_active", "bosch_ldi_bike_not_driving"
-        ).forEach { id -> assertNotNull(ids.contains(id), "Missing type ID: $id") }
+        ).forEach { id -> assertTrue(ids.contains(id), "Missing type ID: $id") }
     }
 }

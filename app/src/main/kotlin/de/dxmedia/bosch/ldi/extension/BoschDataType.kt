@@ -18,7 +18,7 @@ class BoschDataType(
 ) : DataTypeImpl("bosch-ldi", dataTypeId) {
 
     override fun startStream(emitter: Emitter<StreamState>) {
-        val job = CoroutineScope(Dispatchers.IO).launch {
+        val job = CoroutineScope(Dispatchers.Default).launch {
             liveData.filterNotNull().collect { data ->
                 val value = data.extract()
                 emitter.onNext(
