@@ -10,7 +10,7 @@ class BikeRepository(context: Context) {
     private val prefs = EncryptedSharedPreferences.create(
         context,
         "bikes_data",
-        MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+        MasterKey.Builder(context.applicationContext).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -44,7 +44,11 @@ class BikeRepository(context: Context) {
     }
 
     private fun save(profiles: List<BikeProfile>) {
-        prefs.edit().putString(KEY_PROFILES, BikeProfile.serialize(profiles)).apply()
+        try {
+            prefs.edit().putString(KEY_PROFILES, BikeProfile.serialize(profiles)).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save profiles", e)
+        }
     }
 
     companion object {
