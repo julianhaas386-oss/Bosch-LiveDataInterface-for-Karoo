@@ -13,9 +13,9 @@ import kotlinx.coroutines.launch
 
 class BoschDataType(
     private val liveData: StateFlow<BoschLiveData?>,
-    dataTypeId: String,
+    internal val typeId: String,
     internal val extract: BoschLiveData.() -> Double?
-) : DataTypeImpl("bosch-ldi", dataTypeId) {
+) : DataTypeImpl("bosch-ldi", typeId) {
 
     override fun startStream(emitter: Emitter<StreamState>) {
         val job = CoroutineScope(Dispatchers.Default).launch {

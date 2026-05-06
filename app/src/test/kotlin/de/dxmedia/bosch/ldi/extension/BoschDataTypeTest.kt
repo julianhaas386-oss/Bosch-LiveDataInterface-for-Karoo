@@ -28,11 +28,11 @@ class BoschDataTypeTest {
     private val types = BoschDataType.allTypes(flow)
 
     private fun extract(typeId: String, data: BoschLiveData = fullData): Double? =
-        types.first { it.dataTypeId == typeId }.extract(data)
+        types.first { it.typeId == typeId }.extract(data)
 
     @Test fun `allTypes returns 13 types with distinct IDs`() {
         assertEquals(13, types.size)
-        assertEquals(13, types.map { it.dataTypeId }.toSet().size)
+        assertEquals(13, types.map { it.typeId }.toSet().size)
     }
 
     @Test fun `speed converts centimetres per hour to km per hour`() {
@@ -103,7 +103,7 @@ class BoschDataTypeTest {
     }
 
     @Test fun `all 13 expected type IDs are present`() {
-        val ids = types.map { it.dataTypeId }.toSet()
+        val ids = types.map { it.typeId }.toSet()
         listOf(
             "bosch_ldi_speed", "bosch_ldi_cadence", "bosch_ldi_rider_power",
             "bosch_ldi_ambient_brightness", "bosch_ldi_battery_soc", "bosch_ldi_time",
