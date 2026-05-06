@@ -115,7 +115,12 @@ open class BleManager(
                            else AdvertiseSettings.ADVERTISE_MODE_BALANCED
                 val settings = buildAdvertiseSettings(mode)
                 val data = buildAdvertiseData()
-                advertiser.startAdvertising(settings, data, advertiseCallback)
+                try {
+                    advertiser.startAdvertising(settings, data, advertiseCallback)
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "BLUETOOTH_ADVERTISE permission not granted — cannot advertise", e)
+                    return@withLock
+                }
                 val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                 context.registerReceiver(bondReceiver, filter)
                 _state.value = BleState.Advertising(bondedAddress)
@@ -187,8 +192,12 @@ open class BleManager(
                                     context.registerReceiver(bondReceiver, filter)
                                     val settings = buildAdvertiseSettings(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                                     val data = buildAdvertiseData()
-                                    advertiser.startAdvertising(settings, data, advertiseCallback)
-                                    _state.value = BleState.Advertising(lastAddress)
+                                    try {
+                                        advertiser.startAdvertising(settings, data, advertiseCallback)
+                                        _state.value = BleState.Advertising(lastAddress)
+                                    } catch (e: SecurityException) {
+                                        Log.e(TAG, "BLUETOOTH_ADVERTISE not granted — skipping re-advertise", e)
+                                    }
                                 }
                             }
                             bondLostPending = false
@@ -282,7 +291,7 @@ open class BleManager(
     @SuppressLint("NewApi") // addServiceSolicitationUuid requires API 31; Karoo runs API 31+
     internal open fun buildAdvertiseData(): AdvertiseData =
         AdvertiseData.Builder()
-            .setIncludeDeviceName(true)
+            .setIncludeDeviceName(false)
             .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
             .build()
 
