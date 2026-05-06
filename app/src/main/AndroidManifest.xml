@@ -70,6 +70,10 @@
                 android:resource="@xml/extension_info" />
         </service>
 
+        <meta-data
+            android:name="io.hammerhead.karooext.MANIFEST_URL"
+            android:value="https://github.com/julianhaas386-oss/Bosch-LiveDataInterface-for-Karoo/releases/latest/download/manifest.json" />
+
     </application>
 
 </manifest>
