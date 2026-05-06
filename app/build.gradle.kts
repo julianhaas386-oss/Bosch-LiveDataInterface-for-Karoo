@@ -94,6 +94,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.security.crypto)
 
+    implementation(libs.glance.appwidget)
+
     implementation(libs.protobuf.kotlin.lite)
 
     implementation(libs.kotlinx.coroutines.android)
