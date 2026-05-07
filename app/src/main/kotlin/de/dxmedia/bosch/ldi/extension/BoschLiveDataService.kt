@@ -1,8 +1,5 @@
 package de.dxmedia.bosch.ldi.extension
 
-import android.content.Intent
-import android.os.Binder
-import android.os.IBinder
 import de.dxmedia.bosch.ldi.ble.BleManager
 import de.dxmedia.bosch.ldi.ble.BleState
 import de.dxmedia.bosch.ldi.data.BikeRepository
@@ -21,11 +18,9 @@ import kotlinx.coroutines.launch
 
 class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
 
-    inner class LocalBinder : Binder() {
-        val service: BoschLiveDataService get() = this@BoschLiveDataService
+    companion object {
+        val instanceFlow = MutableStateFlow<BoschLiveDataService?>(null)
     }
-
-    private val binder = LocalBinder()
 
     private lateinit var repository: BikeRepository
     private val decoder = LiveDataDecoder()
@@ -52,12 +47,12 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
     override fun onCreate() {
         super.onCreate()
         repository = BikeRepository(this)
+        instanceFlow.value = this
         startBleManager(repository.getActiveProfile()?.bleAddress)
     }
 
-    override fun onBind(intent: Intent): IBinder = binder
-
     override fun onDestroy() {
+        instanceFlow.value = null
         serviceScope.cancel()
         _bleManager?.stop()
         super.onDestroy()

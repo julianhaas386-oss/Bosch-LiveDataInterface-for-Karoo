@@ -18,8 +18,10 @@ class PairingWizardViewModel(
     val slot: BikeSlot,
     private val connectionState: StateFlow<BleState>,
     private val onStartPairing: () -> Unit,
-    private val scope: CoroutineScope = viewModelScope
+    private val testScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope get() = testScope ?: viewModelScope
 
     private val _state = MutableStateFlow<PairingState>(PairingState.Explaining)
     val state: StateFlow<PairingState> = _state.asStateFlow()

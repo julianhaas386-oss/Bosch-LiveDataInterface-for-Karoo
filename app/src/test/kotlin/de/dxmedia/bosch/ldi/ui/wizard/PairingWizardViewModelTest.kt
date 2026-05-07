@@ -26,7 +26,7 @@ class PairingWizardViewModelTest {
         slot = BikeSlot.ALPHA,
         connectionState = connectionState,
         onStartPairing = onStartPairing,
-        scope = scope
+        testScope = scope
     )
 
     @Test

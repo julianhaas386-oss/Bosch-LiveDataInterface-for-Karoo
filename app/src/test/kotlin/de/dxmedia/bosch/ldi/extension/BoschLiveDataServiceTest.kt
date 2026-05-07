@@ -10,11 +10,11 @@ class BoschLiveDataServiceTest {
 
     @Test fun `BoschLiveDataService declares bleManager property`() {
         val field = BoschLiveDataService::class.java.declaredFields
-            .firstOrNull { it.name == "bleManager" }
-        assertNotNull(field, "bleManager field must be declared on BoschLiveDataService")
+            .firstOrNull { it.name == "_bleManager" }
+        assertNotNull(field, "_bleManager field must be declared on BoschLiveDataService")
         assertTrue(
             BleManager::class.java.isAssignableFrom(field!!.type),
-            "bleManager must be of type BleManager"
+            "_bleManager must be of type BleManager"
         )
     }
 

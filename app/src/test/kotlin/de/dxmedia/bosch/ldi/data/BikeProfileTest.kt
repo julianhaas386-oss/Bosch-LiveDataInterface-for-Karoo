@@ -23,8 +23,8 @@ class BikeProfileTest {
         assertEquals(BikeProfile.DEFAULT_FIELDS, p.enabledFields)
     }
 
-    @Test fun `DEFAULT_FIELDS contains all 15 field ids`() {
-        assertEquals(15, BikeProfile.DEFAULT_FIELDS.size)
+    @Test fun `DEFAULT_FIELDS contains all 14 field ids`() {
+        assertEquals(14, BikeProfile.DEFAULT_FIELDS.size)
     }
 
     @Test fun `serialize then deserialize round-trips paired active profile`() {
