@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.bundles.androidx.lifecycle)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.bundles.compose.ui)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
