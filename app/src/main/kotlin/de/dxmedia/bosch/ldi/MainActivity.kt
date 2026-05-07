@@ -122,8 +122,8 @@ class MainActivity : ComponentActivity() {
                                 ?: return@composable
                             val slot = BikeSlot.valueOf(slotName)
                             val profile = remember(slot) {
-                                repository.getProfiles().first { it.slot == slot }
-                            }
+                                repository.getProfiles().firstOrNull { it.slot == slot }
+                            } ?: return@composable
                             val vm = remember(slot) {
                                 BikeDetailViewModel(
                                     profile = profile,
