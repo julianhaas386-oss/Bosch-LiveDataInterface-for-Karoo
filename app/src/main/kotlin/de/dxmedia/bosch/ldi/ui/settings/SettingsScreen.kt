@@ -51,7 +51,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = versionName ?: "—",
+                text = versionName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -127,7 +127,10 @@ class MainActivity : ComponentActivity() {
                             val vm = remember(slot) {
                                 BikeDetailViewModel(
                                     profile = profile,
-                                    onSave = { updated -> repository.upsert(updated) },
+                                    onSave = { updated ->
+                                        repository.upsert(updated)
+                                        service?.reloadActiveProfile()
+                                    },
                                     onForget = { s ->
                                         repository.delete(s)
                                         service?.setActiveSlot(

@@ -28,8 +28,7 @@ data class BikeProfile(
             "bosch_ldi_charger_connected",
             "bosch_ldi_diagnosis_program_active",
             "bosch_ldi_bike_not_driving",
-            "bosch_ldi_connection",
-            "bosch_ldi_ebike_dashboard"
+            "bosch_ldi_connection"
         )
 
         private val BLE_ADDRESS_REGEX = Regex("""^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$""")

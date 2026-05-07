@@ -79,6 +79,10 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
         startBleManager(repository.getActiveProfile()?.bleAddress)
     }
 
+    fun reloadActiveProfile() {
+        startBleManager(repository.getActiveProfile()?.bleAddress)
+    }
+
     private fun startBleManager(address: String?) {
         stateJob?.cancel()
         notifJob?.cancel()
