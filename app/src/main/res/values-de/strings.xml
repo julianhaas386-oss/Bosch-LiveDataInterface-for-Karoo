@@ -100,6 +100,8 @@
     <string name="bike_list_title">Meine eBikes</string>
     <string name="bike_list_empty">Noch kein eBike gekoppelt.\nTippe auf +, um dein erstes eBike hinzuzuf&#xfc;gen.</string>
     <string name="bike_list_btn_add">Neues eBike koppeln</string>
+    <string name="bike_slot_not_paired">Nicht verbunden — tippen zum Koppeln</string>
+    <string name="bike_slot_paired">Verbunden</string>
     <string name="bike_detail_title">eBike-Einstellungen</string>
     <string name="bike_detail_name_label">Name</string>
     <string name="bike_detail_name_hint">z.B. Trek Allant+</string>
