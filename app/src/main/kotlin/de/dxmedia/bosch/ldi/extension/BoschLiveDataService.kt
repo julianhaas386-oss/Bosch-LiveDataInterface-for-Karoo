@@ -69,7 +69,7 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
     }
 
     fun onPairingSuccess(slot: BikeSlot, bleAddress: String) {
-        val profile = repository.getProfiles().first { it.slot == slot }
+        val profile = repository.getProfiles().firstOrNull { it.slot == slot } ?: return
         repository.upsert(profile.copy(bleAddress = bleAddress))
         startBleManager(bleAddress)
     }
