@@ -120,8 +120,9 @@ open class BleManager(
                            else AdvertiseSettings.ADVERTISE_MODE_BALANCED
                 val settings = buildAdvertiseSettings(mode)
                 val data = buildAdvertiseData()
+                val scanResponse = buildScanResponse()
                 try {
-                    advertiser.startAdvertising(settings, data, advertiseCallback)
+                    advertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
                 } catch (e: SecurityException) {
                     Log.e(TAG, "BLUETOOTH_ADVERTISE permission not granted — cannot advertise", e)
                     gattServer?.close()
@@ -203,9 +204,10 @@ open class BleManager(
                                     context.registerReceiver(bondReceiver, filter)
                                     val settings = buildAdvertiseSettings(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                                     val data = buildAdvertiseData()
+                                    val scanResponse = buildScanResponse()
                                     openGattServer()
                                     try {
-                                        advertiser.startAdvertising(settings, data, advertiseCallback)
+                                        advertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
                                         _state.value = BleState.Advertising(lastAddress)
                                     } catch (e: SecurityException) {
                                         Log.e(TAG, "BLUETOOTH_ADVERTISE not granted — skipping re-advertise", e)
@@ -305,8 +307,15 @@ open class BleManager(
     @SuppressLint("NewApi") // addServiceSolicitationUuid requires API 31; Karoo runs API 31+
     internal open fun buildAdvertiseData(): AdvertiseData =
         AdvertiseData.Builder()
-            .setIncludeDeviceName(true)
+            .setIncludeDeviceName(false)
             .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
+            .build()
+
+    // Device name goes in the scan response so the primary packet stays within 31 bytes.
+    internal open fun buildScanResponse(): AdvertiseData =
+        AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .setIncludeTxPowerLevel(false)
             .build()
 
     internal open fun openGattServer() {

@@ -33,6 +33,7 @@ class BleManagerTest {
     ) {
         override fun buildAdvertiseSettings(mode: Int): AdvertiseSettings = mockk(relaxed = true)
         override fun buildAdvertiseData(): AdvertiseData = mockk(relaxed = true)
+        override fun buildScanResponse(): AdvertiseData = mockk(relaxed = true)
         override fun openGattServer() {} // no-op: avoids BluetoothManager system service calls in tests
     }
 
@@ -84,7 +85,7 @@ class BleManagerTest {
         m.start(null) // second call must be ignored
 
         io.mockk.verify(exactly = 1) {
-            mockAdvertiser.startAdvertising(any(), any(), any())
+            mockAdvertiser.startAdvertising(any(), any(), any(), any())
         }
     }
 
