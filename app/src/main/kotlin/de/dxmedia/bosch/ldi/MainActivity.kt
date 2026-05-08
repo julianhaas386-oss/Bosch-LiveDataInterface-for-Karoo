@@ -27,8 +27,15 @@ import de.dxmedia.bosch.ldi.ui.bikes.BikeListViewModel
 import de.dxmedia.bosch.ldi.ui.settings.SettingsScreen
 import de.dxmedia.bosch.ldi.ui.wizard.PairingWizardScreen
 import de.dxmedia.bosch.ldi.ui.wizard.PairingWizardViewModel
+import de.dxmedia.bosch.ldi.util.LocaleHelper
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val lang = LocaleHelper.getStoredLanguage(newBase)
+        super.attachBaseContext(LocaleHelper.applyLanguage(newBase, lang))
+    }
 
     private val blePermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
@@ -57,6 +64,8 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface {
                     val service by BoschLiveDataService.instanceFlow.collectAsState()
+                    val bleState by (service?.connectionState
+                        ?: MutableStateFlow(BleState.Disconnected)).collectAsState()
                     val navController = rememberNavController()
 
                     NavHost(navController = navController, startDestination = "bikes") {
@@ -65,6 +74,7 @@ class MainActivity : ComponentActivity() {
                             val vm = remember { BikeListViewModel(repository) }
                             BikeListScreen(
                                 viewModel = vm,
+                                bleState = bleState,
                                 onPairSlot = { slot ->
                                     navController.navigate("bikes/${slot.name}/wizard")
                                 },
@@ -130,7 +140,13 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("settings") {
-                            SettingsScreen(onBack = { navController.popBackStack() })
+                            SettingsScreen(
+                                onBack = { navController.popBackStack() },
+                                onLanguageChange = { lang ->
+                                    LocaleHelper.setLanguage(this@MainActivity, lang)
+                                    recreate()
+                                }
+                            )
                         }
                     }
                 }

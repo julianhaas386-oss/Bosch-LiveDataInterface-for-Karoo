@@ -102,6 +102,9 @@
     <string name="bike_list_btn_add">Pair New eBike</string>
     <string name="bike_slot_not_paired">Not paired — tap to connect</string>
     <string name="bike_slot_paired">Paired</string>
+    <string name="bike_slot_ble_connecting">Searching for eBike…</string>
+    <string name="bike_slot_ble_connected">Connected</string>
+    <string name="bike_slot_ble_disconnected">Disconnected</string>
     <string name="bike_detail_title">eBike Settings</string>
     <string name="bike_detail_name_label">Name</string>
     <string name="bike_detail_name_hint">e.g. Trek Allant+</string>

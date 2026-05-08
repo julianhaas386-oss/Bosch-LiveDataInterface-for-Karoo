@@ -7,6 +7,9 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattServer
+import android.bluetooth.BluetoothGattServerCallback
+import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.AdvertiseCallback
@@ -101,6 +104,7 @@ open class BleManager(
     internal val gattCallback = GattCallback()
     private val advertiseCallback = BoschAdvertiseCallback()
     private val bondReceiver = BondReceiver()
+    private var gattServer: BluetoothGattServer? = null
 
     fun start(bondedAddress: String? = null) {
         scope.launch {
@@ -111,6 +115,7 @@ open class BleManager(
                     Log.e(TAG, "LE advertising not supported on this device")
                     return@withLock
                 }
+                openGattServer()
                 val mode = if (bondedAddress == null) AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
                            else AdvertiseSettings.ADVERTISE_MODE_BALANCED
                 val settings = buildAdvertiseSettings(mode)
@@ -119,6 +124,8 @@ open class BleManager(
                     advertiser.startAdvertising(settings, data, advertiseCallback)
                 } catch (e: SecurityException) {
                     Log.e(TAG, "BLUETOOTH_ADVERTISE permission not granted — cannot advertise", e)
+                    gattServer?.close()
+                    gattServer = null
                     return@withLock
                 }
                 val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
@@ -133,6 +140,8 @@ open class BleManager(
         closeableDispatcher?.close()
         try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
         try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
+        gattServer?.close()
+        gattServer = null
         activeGatt?.disconnect()
         activeGatt?.close()
         activeGatt = null
@@ -148,6 +157,8 @@ open class BleManager(
         watchdogJob?.cancel()
         watchdogJob = null
         try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
+        gattServer?.close()
+        gattServer = null
         activeGatt?.disconnect()
         activeGatt?.close()
         activeGatt = null
@@ -192,11 +203,14 @@ open class BleManager(
                                     context.registerReceiver(bondReceiver, filter)
                                     val settings = buildAdvertiseSettings(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                                     val data = buildAdvertiseData()
+                                    openGattServer()
                                     try {
                                         advertiser.startAdvertising(settings, data, advertiseCallback)
                                         _state.value = BleState.Advertising(lastAddress)
                                     } catch (e: SecurityException) {
                                         Log.e(TAG, "BLUETOOTH_ADVERTISE not granted — skipping re-advertise", e)
+                                        gattServer?.close()
+                                        gattServer = null
                                     }
                                 }
                             }
@@ -291,9 +305,56 @@ open class BleManager(
     @SuppressLint("NewApi") // addServiceSolicitationUuid requires API 31; Karoo runs API 31+
     internal open fun buildAdvertiseData(): AdvertiseData =
         AdvertiseData.Builder()
-            .setIncludeDeviceName(false)
+            .setIncludeDeviceName(true)
             .addServiceSolicitationUuid(ParcelUuid(SERVICE_UUID))
             .build()
+
+    internal open fun openGattServer() {
+        gattServer?.close()
+        val mgr = context.getSystemService<BluetoothManager>() ?: return
+        gattServer = mgr.openGattServer(context, ServerCallback())
+        val svc = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        val chr = BluetoothGattCharacteristic(
+            CHARACTERISTIC_UUID,
+            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ
+        )
+        chr.addDescriptor(
+            BluetoothGattDescriptor(
+                CCCD_UUID,
+                BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
+            )
+        )
+        svc.addCharacteristic(chr)
+        gattServer?.addService(svc)
+        Log.i(TAG, "GATT server opened")
+    }
+
+    private inner class ServerCallback : BluetoothGattServerCallback() {
+        override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
+            if (newState != BluetoothProfile.STATE_CONNECTED) return
+            scope.launch {
+                mutex.withLock {
+                    val current = _state.value
+                    if (current !is BleState.Advertising) {
+                        gattServer?.cancelConnection(device)
+                        return@withLock
+                    }
+                    val expected = current.bondedAddress
+                    if (expected != null && device.address != expected) {
+                        Log.w(TAG, "GATT server: unexpected device ${device.address} (expected $expected) — rejecting")
+                        gattServer?.cancelConnection(device)
+                        return@withLock
+                    }
+                    Log.i(TAG, "GATT server: eBike ${device.address} — connecting as GATT client")
+                    try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
+                    gattServer?.close()
+                    gattServer = null
+                    device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+                }
+            }
+        }
+    }
 
     private fun enableNotifications(gatt: BluetoothGatt) {
         val characteristic = ldiCharacteristic ?: return
@@ -386,10 +447,18 @@ open class BleManager(
 
     private inner class BoschAdvertiseCallback : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            Log.i(TAG, "Advertising started")
+            Log.i(TAG, "Advertising started successfully")
         }
         override fun onStartFailure(errorCode: Int) {
-            Log.e(TAG, "Advertising failed: errorCode=$errorCode")
+            val reason = when (errorCode) {
+                ADVERTISE_FAILED_DATA_TOO_LARGE -> "DATA_TOO_LARGE"
+                ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> "TOO_MANY_ADVERTISERS"
+                ADVERTISE_FAILED_ALREADY_STARTED -> "ALREADY_STARTED"
+                ADVERTISE_FAILED_INTERNAL_ERROR -> "INTERNAL_ERROR"
+                ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
+                else -> "UNKNOWN($errorCode)"
+            }
+            Log.e(TAG, "Advertising FAILED: $reason")
             scope.launch { mutex.withLock { _state.value = BleState.Disconnected } }
         }
     }

@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,12 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.dxmedia.bosch.ldi.R
+import de.dxmedia.bosch.ldi.ble.BleState
 import de.dxmedia.bosch.ldi.data.BikeProfile
 import de.dxmedia.bosch.ldi.data.BikeSlot
 
 @Composable
 fun BikeListScreen(
     viewModel: BikeListViewModel,
+    bleState: BleState,
     onPairSlot: (BikeSlot) -> Unit,
     onEditSlot: (BikeSlot) -> Unit,
     onNavigateSettings: () -> Unit
@@ -55,6 +59,7 @@ fun BikeListScreen(
             items(profiles, key = { it.slot.name }) { profile ->
                 BikeSlotCard(
                     profile = profile,
+                    bleState = bleState,
                     onClick = {
                         if (profile.bleAddress == null) onPairSlot(profile.slot)
                         else onEditSlot(profile.slot)
@@ -66,7 +71,20 @@ fun BikeListScreen(
 }
 
 @Composable
-private fun BikeSlotCard(profile: BikeProfile, onClick: () -> Unit) {
+private fun BikeSlotCard(profile: BikeProfile, bleState: BleState, onClick: () -> Unit) {
+    val statusText = when {
+        profile.bleAddress == null -> stringResource(R.string.bike_slot_not_paired)
+        !profile.isActive -> stringResource(R.string.bike_slot_paired)
+        bleState is BleState.Connected -> stringResource(R.string.bike_slot_ble_connected)
+        bleState is BleState.Advertising -> stringResource(R.string.bike_slot_ble_connecting)
+        else -> stringResource(R.string.bike_slot_ble_disconnected)
+    }
+    val statusColor = when {
+        profile.isActive && bleState is BleState.Connected -> MaterialTheme.colorScheme.primary
+        profile.isActive && bleState is BleState.Advertising -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,15 +107,19 @@ private fun BikeSlotCard(profile: BikeProfile, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = if (profile.bleAddress != null)
-                        stringResource(R.string.bike_slot_paired)
-                    else
-                        stringResource(R.string.bike_slot_not_paired),
+                    text = statusText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = statusColor
                 )
             }
-            if (profile.isActive) {
+            if (profile.isActive && bleState is BleState.Advertising) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            } else if (profile.isActive) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "✓",
