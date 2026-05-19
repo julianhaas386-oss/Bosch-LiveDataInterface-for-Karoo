@@ -41,6 +41,7 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
         BoschDataType.allTypes(liveData) +
         listOf(
             ConnectionDataType(connectionState),
+            BatterySocBarDataType(liveData),
             EBikePage(liveData)
         )
 

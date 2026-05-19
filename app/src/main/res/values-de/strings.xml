@@ -75,6 +75,10 @@
     <string name="field_connection_searching">SUCHE&#x2026;</string>
     <string name="field_connection_disconnected">GETRENNT</string>
 
+    <!-- Seite: Akku-Balken -->
+    <string name="field_battery_bar_name">Akku-Balken</string>
+    <string name="field_battery_bar_desc">Grafische Akkustandsanzeige — grün über 50 %, gelb 20–50 %, rot unter 20 %</string>
+
     <!-- Seite: eBike-Dashboard -->
     <string name="page_dashboard_name">eBike-Dashboard</string>
     <string name="page_dashboard_desc">Alle Bosch eBike Livedaten auf einen Blick</string>

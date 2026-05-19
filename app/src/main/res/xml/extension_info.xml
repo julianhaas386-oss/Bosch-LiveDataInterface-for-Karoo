@@ -121,6 +121,16 @@
         description="@string/field_connection_desc"
         icon="@drawable/ic_launcher_foreground" />
 
+    <!-- ── Battery Bar Page ─────────────────────────────────────────── -->
+
+    <!-- Graphical battery SOC bar: green >50 %, yellow 20–50 %, red ≤20 % -->
+    <DataType
+        typeId="bosch_ldi_battery_bar"
+        displayName="@string/field_battery_bar_name"
+        description="@string/field_battery_bar_desc"
+        icon="@drawable/ic_launcher_foreground"
+        graphical="true" />
+
     <!-- ── Dashboard Page ─────────────────────────────────────────── -->
 
     <!-- Dedicated eBike overview page with SOC, power, cadence, speed + odometer -->
