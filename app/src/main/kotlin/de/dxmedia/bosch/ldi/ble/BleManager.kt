@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
-import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.AdvertiseCallback
@@ -175,6 +174,10 @@ open class BleManager(
                 mutex.withLock {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
+                            if (activeGatt != null) {
+                                Log.w(TAG, "Duplicate CONNECTED callback for ${gatt.device.address} — ignoring")
+                                return@withLock
+                            }
                             val expectedAddress = bondedAddress
                             if (expectedAddress != null && gatt.device.address != expectedAddress) {
                                 Log.w(TAG, "Connection from unexpected device ${gatt.device.address}, expected $expectedAddress — rejecting")
@@ -183,6 +186,8 @@ open class BleManager(
                             }
                             Log.i(TAG, "GATT connected — starting service discovery")
                             activeGatt = gatt
+                            gattServer?.close()
+                            gattServer = null
                             _state.value = BleState.Connected(gatt.device.address)
                             gatt.discoverServices()
                         }
@@ -322,20 +327,6 @@ open class BleManager(
         gattServer?.close()
         val mgr = context.getSystemService<BluetoothManager>() ?: return
         gattServer = mgr.openGattServer(context, ServerCallback())
-        val svc = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
-        val chr = BluetoothGattCharacteristic(
-            CHARACTERISTIC_UUID,
-            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ
-        )
-        chr.addDescriptor(
-            BluetoothGattDescriptor(
-                CCCD_UUID,
-                BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
-            )
-        )
-        svc.addCharacteristic(chr)
-        gattServer?.addService(svc)
         Log.i(TAG, "GATT server opened")
     }
 
@@ -357,8 +348,6 @@ open class BleManager(
                     }
                     Log.i(TAG, "GATT server: eBike ${device.address} — connecting as GATT client")
                     try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
-                    gattServer?.close()
-                    gattServer = null
                     device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
                 }
             }
@@ -441,15 +430,16 @@ open class BleManager(
         }
 
         fun handleBondStateChanged(device: BluetoothDevice, newBondState: Int) {
-            if (newBondState == BluetoothDevice.BOND_NONE) {
-                Log.w(TAG, "Bond lost with ${device.address} — removing bond and disconnecting")
-                try {
-                    device.javaClass.getMethod("removeBond").invoke(device)
-                } catch (e: Exception) {
-                    Log.e(TAG, "removeBond() reflection failed", e)
+            when (newBondState) {
+                BluetoothDevice.BOND_BONDING ->
+                    Log.i(TAG, "Bonding with ${device.address} in progress (LE Secure Connections)")
+                BluetoothDevice.BOND_BONDED ->
+                    Log.i(TAG, "Bonded with ${device.address} — Android will retry pending GATT ops")
+                BluetoothDevice.BOND_NONE -> {
+                    Log.w(TAG, "Bond lost / pairing failed with ${device.address} — disconnecting")
+                    bondLostPending = true
+                    scope.launch { mutex.withLock { disconnectInternal() } }
                 }
-                bondLostPending = true
-                scope.launch { mutex.withLock { disconnectInternal() } }
             }
         }
     }

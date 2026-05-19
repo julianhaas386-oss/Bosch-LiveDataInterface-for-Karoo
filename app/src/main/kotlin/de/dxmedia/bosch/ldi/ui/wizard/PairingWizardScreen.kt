@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,9 +43,10 @@ fun PairingWizardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             when (val s = state) {
                 is PairingState.Explaining -> ExplainingStep(
@@ -77,25 +80,14 @@ private fun ExplainingStep(slot: de.dxmedia.bosch.ldi.data.BikeSlot, onStart: ()
         text = slot.displayName,
         style = MaterialTheme.typography.headlineSmall
     )
-    Spacer(Modifier.height(16.dp))
-    Text(
-        text = stringResource(R.string.wizard_step1_title),
-        style = MaterialTheme.typography.titleMedium
-    )
     Spacer(Modifier.height(8.dp))
     Text(
         text = stringResource(R.string.wizard_step1_body),
         textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.bodyMedium
-    )
-    Spacer(Modifier.height(8.dp))
-    Text(
-        text = stringResource(R.string.wizard_security_note),
-        textAlign = TextAlign.Center,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(16.dp))
     Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.wizard_btn_start))
     }
