@@ -77,7 +77,7 @@
 
     <!-- Seite: Akku-Balken -->
     <string name="field_battery_bar_name">Akku-Balken</string>
-    <string name="field_battery_bar_desc">Grafische Akkustandsanzeige — grün über 50 %, gelb 20–50 %, rot unter 20 %</string>
+    <string name="field_battery_bar_desc" formatted="false">Grafische Akkustandsanzeige — grün über 50 %, gelb 20–50 %, rot unter 20 %</string>
 
     <!-- Seite: eBike-Dashboard -->
     <string name="page_dashboard_name">eBike-Dashboard</string>

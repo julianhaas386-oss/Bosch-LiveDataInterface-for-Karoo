@@ -77,7 +77,7 @@
 
     <!-- Page: Battery SOC Bar -->
     <string name="field_battery_bar_name">Battery Bar</string>
-    <string name="field_battery_bar_desc">Graphical battery charge bar — green above 50 %, yellow 20–50 %, red below 20 %</string>
+    <string name="field_battery_bar_desc" formatted="false">Graphical battery charge bar — green above 50 %, yellow 20–50 %, red below 20 %</string>
 
     <!-- Page: eBike Dashboard -->
     <string name="page_dashboard_name">eBike Dashboard</string>
