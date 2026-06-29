@@ -3,6 +3,7 @@
     <!-- App -->
     <string name="app_name">Bosch LiveDataInterface</string>
     <string name="extension_name">Bosch eBike</string>
+    <string name="startup_error">Die App konnte nicht gestartet werden. Bitte installiere sie neu. Falls das Problem weiterhin besteht, melde es bitte auf GitHub.</string>
 
     <!-- DataType: Geschwindigkeit -->
     <string name="field_speed_name">eBike-Geschwindigkeit</string>

@@ -4,14 +4,24 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,12 +63,34 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val missing = blePermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        try {
+            val missing = blePermissions.filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
+        } catch (e: Exception) {
+            Log.e(TAG, "Requesting BLE permissions failed", e)
         }
-        if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
 
-        val repository = BikeRepository(this)
+        val repository = try {
+            BikeRepository(this)
+        } catch (e: Exception) {
+            // Last line of defence: never leave the user on a dead grey window.
+            Log.e(TAG, "Repository init failed — showing error screen", e)
+            setContent {
+                MaterialTheme {
+                    Surface {
+                        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(R.string.startup_error),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+            return
+        }
 
         setContent {
             MaterialTheme {
@@ -152,5 +184,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }
