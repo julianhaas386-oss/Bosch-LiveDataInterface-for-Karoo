@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        App window theme. NoActionBar: the Compose UI (MaterialTheme) draws its own
+        TopAppBar, so the framework action bar must not show the app label as a title
+        (issue #4: "grey screen with the text Bosch LiveDataInterface").
+        DayNight follows the system setting for the brief pre-Compose window background.
+    -->
+    <style name="Theme.BoschLDI" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>
