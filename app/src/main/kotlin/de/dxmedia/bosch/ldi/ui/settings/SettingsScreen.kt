@@ -1,5 +1,6 @@
 package de.dxmedia.bosch.ldi.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -25,16 +27,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.dxmedia.bosch.ldi.R
+import de.dxmedia.bosch.ldi.ble.BleDebugLog
+import de.dxmedia.bosch.ldi.util.DebugSettings
 import de.dxmedia.bosch.ldi.util.LocaleHelper
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onLanguageChange: (String?) -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onLanguageChange: (String?) -> Unit,
+    onNavigateBleLog: () -> Unit
+) {
     val context = LocalContext.current
     val versionName = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     }.getOrDefault("—")
 
     var selectedLanguage by remember { mutableStateOf(LocaleHelper.getStoredLanguage(context)) }
+    var bleDebugEnabled by remember { mutableStateOf(DebugSettings.isBleDebugEnabled(context)) }
 
     val languageOptions = listOf(
         null to stringResource(R.string.settings_language_system),
@@ -101,6 +110,39 @@ fun SettingsScreen(onBack: () -> Unit, onLanguageChange: (String?) -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_ble_debug_label),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Switch(
+                    checked = bleDebugEnabled,
+                    onCheckedChange = { enabled ->
+                        bleDebugEnabled = enabled
+                        DebugSettings.setBleDebugEnabled(context, enabled)
+                        BleDebugLog.enabled = enabled
+                    }
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.settings_ble_log_open),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateBleLog)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
         }
     }
 }

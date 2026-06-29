@@ -40,9 +40,11 @@ Loaded into `BleDebugLog.enabled` at startup of both `MainActivity.onCreate` and
 
 ### `BleLogScreen` (new, route `ble_log`)
 Scrollable, monospace, small-font list of `BleDebugLog.entries` (collected live), newest at
-bottom, auto-stick to bottom. TopBar with back nav + actions: **Clear**, **Copy** (to
-clipboard), **Share** (`ACTION_SEND`, `text/plain`). Copy/Share wrapped in `runCatching` so a
-Karoo without a share target never crashes. Screenshot/read is the expected primary path.
+bottom, auto-stick to bottom. TopBar with back nav + actions: **Share** (`ACTION_SEND`,
+`text/plain`) and **Clear**. Share is wrapped in `runCatching` so a Karoo without a share
+target never crashes. Screenshot/read is the expected primary path. (Copy-to-clipboard was
+dropped: its only core-set icon is absent, and pulling in `material-icons-extended` for one
+glyph is not worth it — Share is the export affordance.)
 
 ### Settings + navigation
 - `SettingsScreen`: a `Switch` "Enable BLE debug" (bound to `DebugSettings`, flips

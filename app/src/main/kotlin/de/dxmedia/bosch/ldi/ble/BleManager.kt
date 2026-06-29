@@ -20,7 +20,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.ParcelUuid
-import android.util.Log
 import androidx.core.content.getSystemService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -75,8 +74,6 @@ open class BleManager(
         const val NOTIFICATION_WATCHDOG_MS = 60_000L
         const val MAX_NOTIFICATIONS_PER_SECOND = 10
         const val MAX_PROTO_BYTES = 16 * 1024
-
-        private const val TAG = "BleManager"
     }
 
     private val closeableDispatcher: Closeable? = dispatcher as? Closeable
@@ -111,7 +108,7 @@ open class BleManager(
                 if (_state.value !is BleState.Disconnected) return@withLock
                 this@BleManager.bondedAddress = bondedAddress
                 val advertiser = adapter.bluetoothLeAdvertiser ?: run {
-                    Log.e(TAG, "LE advertising not supported on this device")
+                    BleDebugLog.e("LE advertising not supported on this device")
                     return@withLock
                 }
                 openGattServer()
@@ -123,7 +120,7 @@ open class BleManager(
                 try {
                     advertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
                 } catch (e: SecurityException) {
-                    Log.e(TAG, "BLUETOOTH_ADVERTISE permission not granted — cannot advertise", e)
+                    BleDebugLog.e("BLUETOOTH_ADVERTISE permission not granted — cannot advertise", e)
                     gattServer?.close()
                     gattServer = null
                     return@withLock
@@ -175,16 +172,16 @@ open class BleManager(
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
                             if (activeGatt != null) {
-                                Log.w(TAG, "Duplicate CONNECTED callback for ${gatt.device.address} — ignoring")
+                                BleDebugLog.w("Duplicate CONNECTED callback for ${gatt.device.address} — ignoring")
                                 return@withLock
                             }
                             val expectedAddress = bondedAddress
                             if (expectedAddress != null && gatt.device.address != expectedAddress) {
-                                Log.w(TAG, "Connection from unexpected device ${gatt.device.address}, expected $expectedAddress — rejecting")
+                                BleDebugLog.w("Connection from unexpected device ${gatt.device.address}, expected $expectedAddress — rejecting")
                                 gatt.disconnect()
                                 return@withLock
                             }
-                            Log.i(TAG, "GATT connected — starting service discovery")
+                            BleDebugLog.i("GATT connected — starting service discovery")
                             activeGatt = gatt
                             gattServer?.close()
                             gattServer = null
@@ -192,7 +189,7 @@ open class BleManager(
                             gatt.discoverServices()
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
-                            Log.i(TAG, "GATT disconnected (status=$status)")
+                            BleDebugLog.i("GATT disconnected (status=$status)")
                             gatt.close()
                             activeGatt = null
                             ldiCharacteristic = null
@@ -201,7 +198,7 @@ open class BleManager(
                             _state.value = BleState.Disconnected
                             if (!bondLostPending) {
                                 val lastAddress = bondedAddress
-                                Log.i(TAG, "Link loss detected — re-advertising for reconnect")
+                                BleDebugLog.i("Link loss detected — re-advertising for reconnect")
                                 val advertiser = adapter.bluetoothLeAdvertiser
                                 if (advertiser != null) {
                                     try { context.unregisterReceiver(bondReceiver) } catch (_: IllegalArgumentException) {}
@@ -215,7 +212,7 @@ open class BleManager(
                                         advertiser.startAdvertising(settings, data, scanResponse, advertiseCallback)
                                         _state.value = BleState.Advertising(lastAddress)
                                     } catch (e: SecurityException) {
-                                        Log.e(TAG, "BLUETOOTH_ADVERTISE not granted — skipping re-advertise", e)
+                                        BleDebugLog.e("BLUETOOTH_ADVERTISE not granted — skipping re-advertise", e)
                                         gattServer?.close()
                                         gattServer = null
                                     }
@@ -232,19 +229,19 @@ open class BleManager(
             scope.launch {
                 mutex.withLock {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
-                        Log.e(TAG, "Service discovery failed: status=$status")
+                        BleDebugLog.e("Service discovery failed: status=$status")
                         gatt.disconnect()
                         return@withLock
                     }
                     val service = gatt.getService(SERVICE_UUID)
                     val characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
                     if (characteristic == null) {
-                        Log.e(TAG, "LDI service or characteristic not found — disconnecting")
+                        BleDebugLog.e("LDI service or characteristic not found — disconnecting")
                         gatt.disconnect()
                         return@withLock
                     }
                     ldiCharacteristic = characteristic
-                    Log.i(TAG, "LDI characteristic found — requesting MTU")
+                    BleDebugLog.i("LDI characteristic found — requesting MTU")
                     gatt.requestMtu(TARGET_MTU)
                 }
             }
@@ -255,11 +252,11 @@ open class BleManager(
                 mutex.withLock {
                     mtuChannel.trySend(mtu)
                     if (status != BluetoothGatt.GATT_SUCCESS || mtu < TARGET_MTU) {
-                        Log.e(TAG, "MTU negotiated=$mtu (need $TARGET_MTU) — disconnecting (LDI-003)")
+                        BleDebugLog.e("MTU negotiated=$mtu (need $TARGET_MTU) — disconnecting (LDI-003)")
                         gatt.disconnect()
                         return@withLock
                     }
-                    Log.i(TAG, "MTU=$mtu OK — requesting HIGH priority (triggers DLE for LDI-001)")
+                    BleDebugLog.i("MTU=$mtu OK — requesting HIGH priority (triggers DLE for LDI-001)")
                     gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
                     delay(500L)
                     enableNotifications(gatt)
@@ -274,10 +271,10 @@ open class BleManager(
         ) {
             cccdChannel.trySend(status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.i(TAG, "CCCD written — notifications enabled, watchdog armed")
+                BleDebugLog.i("CCCD written — notifications enabled, watchdog armed")
                 scope.launch { mutex.withLock { resetWatchdog() } }
             } else {
-                Log.e(TAG, "CCCD write failed: status=$status — disconnecting")
+                BleDebugLog.e("CCCD write failed: status=$status — disconnecting")
                 scope.launch { mutex.withLock { disconnectInternal() } }
             }
         }
@@ -327,7 +324,7 @@ open class BleManager(
         gattServer?.close()
         val mgr = context.getSystemService<BluetoothManager>() ?: return
         gattServer = mgr.openGattServer(context, ServerCallback())
-        Log.i(TAG, "GATT server opened")
+        BleDebugLog.i("GATT server opened")
     }
 
     private inner class ServerCallback : BluetoothGattServerCallback() {
@@ -342,11 +339,11 @@ open class BleManager(
                     }
                     val expected = current.bondedAddress
                     if (expected != null && device.address != expected) {
-                        Log.w(TAG, "GATT server: unexpected device ${device.address} (expected $expected) — rejecting")
+                        BleDebugLog.w("GATT server: unexpected device ${device.address} (expected $expected) — rejecting")
                         gattServer?.cancelConnection(device)
                         return@withLock
                     }
-                    Log.i(TAG, "GATT server: eBike ${device.address} — connecting as GATT client")
+                    BleDebugLog.i("GATT server: eBike ${device.address} — connecting as GATT client")
                     try { adapter.bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) } catch (_: Exception) {}
                     device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
                 }
@@ -358,7 +355,7 @@ open class BleManager(
         val characteristic = ldiCharacteristic ?: return
         gatt.setCharacteristicNotification(characteristic, true)
         val cccd = characteristic.getDescriptor(CCCD_UUID) ?: run {
-            Log.e(TAG, "CCCD descriptor not found — disconnecting")
+            BleDebugLog.e("CCCD descriptor not found — disconnecting")
             gatt.disconnect()
             return
         }
@@ -376,7 +373,7 @@ open class BleManager(
         scope.launch {
             val shouldEmit = mutex.withLock {
                 if (value.size > MAX_PROTO_BYTES) {
-                    Log.e(TAG, "Proto payload ${value.size}B > 16KB limit — disconnecting")
+                    BleDebugLog.e("Proto payload ${value.size}B > 16KB limit — disconnecting")
                     disconnectInternal()
                     return@withLock false
                 }
@@ -387,7 +384,7 @@ open class BleManager(
                 }
                 notificationWindowCount++
                 if (notificationWindowCount > MAX_NOTIFICATIONS_PER_SECOND) {
-                    Log.w(TAG, "Rate limit exceeded — dropping notification")
+                    BleDebugLog.w("Rate limit exceeded — dropping notification")
                     return@withLock false
                 }
                 resetWatchdog()
@@ -401,7 +398,7 @@ open class BleManager(
         watchdogJob?.cancel()
         watchdogJob = scope.launch {
             delay(NOTIFICATION_WATCHDOG_MS)
-            Log.e(TAG, "No notification for ${NOTIFICATION_WATCHDOG_MS}ms — disconnecting")
+            BleDebugLog.e("No notification for ${NOTIFICATION_WATCHDOG_MS}ms — disconnecting")
             mutex.withLock { disconnectInternal() }
         }
     }
@@ -432,11 +429,11 @@ open class BleManager(
         fun handleBondStateChanged(device: BluetoothDevice, newBondState: Int) {
             when (newBondState) {
                 BluetoothDevice.BOND_BONDING ->
-                    Log.i(TAG, "Bonding with ${device.address} in progress (LE Secure Connections)")
+                    BleDebugLog.i("Bonding with ${device.address} in progress (LE Secure Connections)")
                 BluetoothDevice.BOND_BONDED ->
-                    Log.i(TAG, "Bonded with ${device.address} — Android will retry pending GATT ops")
+                    BleDebugLog.i("Bonded with ${device.address} — Android will retry pending GATT ops")
                 BluetoothDevice.BOND_NONE -> {
-                    Log.w(TAG, "Bond lost / pairing failed with ${device.address} — disconnecting")
+                    BleDebugLog.w("Bond lost / pairing failed with ${device.address} — disconnecting")
                     bondLostPending = true
                     scope.launch { mutex.withLock { disconnectInternal() } }
                 }
@@ -446,7 +443,7 @@ open class BleManager(
 
     private inner class BoschAdvertiseCallback : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            Log.i(TAG, "Advertising started successfully")
+            BleDebugLog.i("Advertising started successfully")
         }
         override fun onStartFailure(errorCode: Int) {
             val reason = when (errorCode) {
@@ -457,7 +454,7 @@ open class BleManager(
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "FEATURE_UNSUPPORTED"
                 else -> "UNKNOWN($errorCode)"
             }
-            Log.e(TAG, "Advertising FAILED: $reason")
+            BleDebugLog.e("Advertising FAILED: $reason")
             scope.launch { mutex.withLock { _state.value = BleState.Disconnected } }
         }
     }

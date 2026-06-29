@@ -130,6 +130,14 @@
     <string name="settings_language_en">English</string>
     <string name="settings_language_de">Deutsch</string>
     <string name="settings_version_label">Version</string>
+    <string name="settings_ble_debug_label">Enable BLE debug</string>
+    <string name="settings_ble_log_open">View BLE log</string>
+
+    <!-- BLE debug log -->
+    <string name="ble_log_title">BLE Log</string>
+    <string name="ble_log_empty">No events captured yet. Enable BLE debug above, then try to connect to your eBike.</string>
+    <string name="ble_log_share">Share</string>
+    <string name="ble_log_clear">Clear</string>
 
     <!-- General -->
     <string name="btn_ok">OK</string>

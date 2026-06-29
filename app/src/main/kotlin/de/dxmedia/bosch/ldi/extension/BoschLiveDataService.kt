@@ -1,9 +1,11 @@
 package de.dxmedia.bosch.ldi.extension
 
+import de.dxmedia.bosch.ldi.ble.BleDebugLog
 import de.dxmedia.bosch.ldi.ble.BleManager
 import de.dxmedia.bosch.ldi.ble.BleState
 import de.dxmedia.bosch.ldi.data.BikeRepository
 import de.dxmedia.bosch.ldi.data.BikeSlot
+import de.dxmedia.bosch.ldi.util.DebugSettings
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.extension.KarooExtension
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +49,7 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
 
     override fun onCreate() {
         super.onCreate()
+        BleDebugLog.enabled = DebugSettings.isBleDebugEnabled(this)
         repository = BikeRepository(this)
         instanceFlow.value = this
         startBleManager(repository.getActiveProfile()?.bleAddress)

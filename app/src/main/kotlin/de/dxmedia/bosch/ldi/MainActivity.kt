@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import de.dxmedia.bosch.ldi.ble.BleDebugLog
 import de.dxmedia.bosch.ldi.ble.BleState
 import de.dxmedia.bosch.ldi.data.BikeRepository
 import de.dxmedia.bosch.ldi.data.BikeSlot
@@ -34,9 +35,11 @@ import de.dxmedia.bosch.ldi.ui.bikes.BikeDetailScreen
 import de.dxmedia.bosch.ldi.ui.bikes.BikeDetailViewModel
 import de.dxmedia.bosch.ldi.ui.bikes.BikeListScreen
 import de.dxmedia.bosch.ldi.ui.bikes.BikeListViewModel
+import de.dxmedia.bosch.ldi.ui.debug.BleLogScreen
 import de.dxmedia.bosch.ldi.ui.settings.SettingsScreen
 import de.dxmedia.bosch.ldi.ui.wizard.PairingWizardScreen
 import de.dxmedia.bosch.ldi.ui.wizard.PairingWizardViewModel
+import de.dxmedia.bosch.ldi.util.DebugSettings
 import de.dxmedia.bosch.ldi.util.LocaleHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -62,6 +65,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        BleDebugLog.enabled = DebugSettings.isBleDebugEnabled(this)
 
         try {
             val missing = blePermissions.filter {
@@ -177,8 +182,13 @@ class MainActivity : ComponentActivity() {
                                 onLanguageChange = { lang ->
                                     LocaleHelper.setLanguage(this@MainActivity, lang)
                                     recreate()
-                                }
+                                },
+                                onNavigateBleLog = { navController.navigate("ble_log") }
                             )
+                        }
+
+                        composable("ble_log") {
+                            BleLogScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
