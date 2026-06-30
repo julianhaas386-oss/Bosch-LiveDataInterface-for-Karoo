@@ -7,6 +7,12 @@
 
 Streams live data from a Bosch Smart System eBike directly to your Hammerhead Karoo 2 or 3 via Bluetooth Low Energy.
 
+## Screenshots
+
+| eBike list | Pairing | Settings |
+|:---:|:---:|:---:|
+| ![My eBikes](docs/screenshots/my-ebikes.png) | ![Connect Your eBike](docs/screenshots/pairing.png) | ![Settings](docs/screenshots/settings.png) |
+
 ## Features
 
 - **13 live eBike data fields** — sourced directly from the Bosch Live Data Interface (LDI)
