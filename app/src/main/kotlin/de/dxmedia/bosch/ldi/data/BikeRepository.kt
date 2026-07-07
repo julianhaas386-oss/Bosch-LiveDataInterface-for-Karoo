@@ -12,13 +12,24 @@ class BikeRepository internal constructor(private val prefs: SharedPreferences) 
     constructor(context: Context) : this(createResilientPrefs(context.applicationContext))
 
     fun getProfiles(): List<BikeProfile> {
-        val json = prefs.getString(KEY_PROFILES, null)
+        // Encrypted prefs can throw on READ too (value fails to decrypt even though
+        // create() succeeded) — never let that kill the first composition (issue #4).
+        val json = try {
+            prefs.getString(KEY_PROFILES, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read profiles — using defaults", e)
+            null
+        }
         val saved = if (json != null) {
             try {
                 BikeProfile.deserialize(json)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to deserialize profiles — resetting", e)
-                prefs.edit().remove(KEY_PROFILES).apply()
+                try {
+                    prefs.edit().remove(KEY_PROFILES).apply()
+                } catch (e2: Exception) {
+                    Log.e(TAG, "Failed to reset corrupt profiles entry", e2)
+                }
                 emptyList()
             }
         } else emptyList()

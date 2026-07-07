@@ -22,6 +22,7 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
 
     companion object {
         val instanceFlow = MutableStateFlow<BoschLiveDataService?>(null)
+        private const val TAG = "BoschLiveDataService"
     }
 
     private lateinit var repository: BikeRepository
@@ -50,7 +51,15 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
     override fun onCreate() {
         super.onCreate()
         BleDebugLog.enabled = DebugSettings.isBleDebugEnabled(this)
-        repository = BikeRepository(this)
+        // The Karoo OS binds this service on its own schedule; an unhandled throw here
+        // kills the whole process (incl. a starting MainActivity) and crash-loops under
+        // rebinding. Run degraded (data types stay Disconnected) instead of dying.
+        try {
+            repository = BikeRepository(this)
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Repository init failed — extension runs degraded", e)
+            return
+        }
         instanceFlow.value = this
         startBleManager(repository.getActiveProfile()?.bleAddress)
     }
@@ -86,7 +95,13 @@ class BoschLiveDataService : KarooExtension("bosch-ldi", "1.0.0") {
         stateJob?.cancel()
         notifJob?.cancel()
         _bleManager?.stop()
-        val mgr = BleManager(this)
+        val mgr = try {
+            BleManager(this)
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "BleManager init failed — staying disconnected", e)
+            _connectionState.value = BleState.Disconnected
+            return
+        }
         _bleManager = mgr
         mgr.start(address)
         stateJob = serviceScope.launch {
