@@ -39,10 +39,19 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Only sign when fully configured — otherwise AGP silently emits an
+            // unsigned APK; CI has a tag-build guard, locally use :app:assembleStaging.
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
         }
         debug {
             isMinifyEnabled = false
+        }
+        // Release-identical R8/shrinking but debug-signed: installable on a device
+        // without release secrets, for on-device smoke tests of the minified build.
+        create("staging") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
         }
     }
 
