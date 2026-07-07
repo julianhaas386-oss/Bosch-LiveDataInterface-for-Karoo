@@ -233,6 +233,14 @@ open class BleManager(
                         gatt.disconnect()
                         return@withLock
                     }
+                    // Diagnostic: dump everything the eBike exposes (issue #4 BLE investigation).
+                    BleDebugLog.i("Discovered ${gatt.services.size} services; bondState=${gatt.device.bondState}")
+                    gatt.services.forEach { svc ->
+                        BleDebugLog.i("  svc ${svc.uuid}")
+                        svc.characteristics.forEach { ch ->
+                            BleDebugLog.i("    char ${ch.uuid} props=0x${Integer.toHexString(ch.properties)}")
+                        }
+                    }
                     val service = gatt.getService(SERVICE_UUID)
                     val characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
                     if (characteristic == null) {
